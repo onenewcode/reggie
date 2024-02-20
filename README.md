@@ -17,6 +17,9 @@
 │   ├── middleware
 │   │   ├── auth.go         # 认证中间件
 │   │   └── logging.go      # 日志记录中间件
+│   ├── global              # 设置全局变量 
+│   │   ├── db.go           # 设置全局数据库参数
+│   │   └── logging.go    
 │   ├── service
 │   │   ├── user_service.go # 用户服务逻辑实现
 │   │   └── ...             # 其他服务逻辑实现

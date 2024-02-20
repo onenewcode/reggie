@@ -1,0 +1,19 @@
+Server:
+  RunMode: debug
+  HttpPort: :8080
+  ReadTimeout: 60
+  WriteTimeout: 60
+App:
+  DefaultPageSize: 10
+  MaxPageSize: 100
+  LogSavePath: storage/logs
+  LogFileName: tools
+  LogFileExt: .log
+Database:
+  DBType: mysql
+  Url: root:root@tcp(121.37.143.160:3306)/reggie?charset=utf8&parseTime=True&loc=Local
+  TablePrefix: #设置表前缀
+  Charset: utf8
+  ParseTime: True
+  MaxIdleConns: 10
+  MaxOpenConns: 30
