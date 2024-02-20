@@ -2,6 +2,7 @@ package global
 
 import "time"
 
+// 全局变量，提供给内部的其他包使用
 var (
 	ServerSetting   *ServerSettingS
 	AppSetting      *AppSettingS

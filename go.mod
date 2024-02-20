@@ -4,14 +4,9 @@ go 1.21.1
 
 require (
 	github.com/cloudwego/hertz v0.6.6
-	github.com/hertz-contrib/swagger v0.0.0-20230410084747-96f1a1b976ab
 	github.com/spf13/viper v1.16.0
-	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2
-	github.com/swaggo/swag v1.8.2
 	gorm.io/driver/mysql v1.5.1
-	gorm.io/gen v0.3.23
 	gorm.io/gorm v1.25.2
-	gorm.io/plugin/dbresolver v1.3.0
 )
 
 require (
