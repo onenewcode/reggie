@@ -2,9 +2,40 @@ package config
 
 import (
 	"github.com/spf13/viper"
-	"reggie/internal/global"
 	"time"
 )
+
+// 全局变量，提供给内部的其他包使用
+var (
+	ServerSetting   *ServerSettingS
+	AppSetting      *AppSettingS
+	DatabaseSetting *DatabaseSettingS
+)
+
+type ServerSettingS struct {
+	RunMode      string
+	HttpPort     string
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+}
+
+type AppSettingS struct {
+	DefaultPageSize int
+	MaxPageSize     int
+	LogSavePath     string
+	LogFileName     string
+	LogFileExt      string
+}
+
+type DatabaseSettingS struct {
+	DBType       string
+	Url          string
+	TablePrefix  string
+	Charset      string
+	ParseTime    bool
+	MaxIdleConns int
+	MaxOpenConns int
+}
 
 // 初始化一个配置类，让viper读取指定的配置文件
 func configPath() (*viper.Viper, error) {
@@ -35,19 +66,19 @@ func InitConfig() {
 	if err != nil {
 		panic("配置文件读取错误")
 	}
-	err = readSection(vp, "Server", &global.ServerSetting)
+	err = readSection(vp, "Server", &ServerSetting)
 	if err != nil {
 		panic("Server类读取错误，检查server类映射是否正确")
 	}
-	err = readSection(vp, "App", &global.AppSetting)
+	err = readSection(vp, "App", &AppSetting)
 	if err != nil {
 		panic("App类读取错误，检查App类映射是否正确")
 	}
-	err = readSection(vp, "Database", &global.DatabaseSetting)
+	err = readSection(vp, "Database", &DatabaseSetting)
 	if err != nil {
 		panic("Database类读取错误，检查Database类映射是否正确")
 	}
 
-	global.ServerSetting.ReadTimeout *= time.Second
-	global.ServerSetting.WriteTimeout *= time.Second
+	ServerSetting.ReadTimeout *= time.Second
+	ServerSetting.WriteTimeout *= time.Second
 }

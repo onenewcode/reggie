@@ -12,7 +12,7 @@ App:
 Database:
   DBType: mysql
   # 记得改成自己的数据库链接，第一个root是用户名，第二个root是密码
-  Url: root:root@tcp(121.37.143.160:3306)/reggie?charset=utf8&parseTime=True&loc=Local
+  Url: root:root@tcp(121.37.143.160:3306)/sky_take_out?charset=utf8&parseTime=True&loc=Local
   TablePrefix: #设置表前缀
   Charset: utf8
   ParseTime: True
