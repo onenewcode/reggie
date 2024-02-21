@@ -23,6 +23,9 @@ func Login(ctx context.Context, c *app.RequestContext) {
 	}
 	//password := c.Query("password")
 	emp := empDao.GetByUserName(empL.Username)
-	c.JSON(http.StatusOK, common.Result{1, "2", emp})
+	if emp == nil {
+		c.JSON(http.StatusNotFound, common.Result{0, "未知用户", nil})
+	}
+	c.JSON(http.StatusOK, common.Result{1, "", emp})
 
 }
