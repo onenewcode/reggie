@@ -3,9 +3,6 @@
 首先介绍开始时我们的项目的总体结构，结构和注释如下，大家可以跟着创建相同的结构，也可以按照自己的思维进行一定的更改。
 ```shell
 .
-├── cmd
-│   └── server
-│       └── main.go         # 主程序入口，启动 HTTP 服务器
 ├── internal
 │   ├── config
 │   │   ├── config.go       # 配置文件读取与解析
@@ -29,6 +26,7 @@
 ├── templates               # HTML模板文件
 ├── go.mod                  # Go模块定义文件
 ├── go.sum                  # 依赖包的校验和信息
+├── main.go                 # 主程序入口，启动 HTTP 服务器
 └── README.md               # 项目文档与说明
 ```
 ## 创建配置文件
@@ -205,8 +203,8 @@ func (*Employee) TableName() string {
 这是我们的实体类，每个字段后面都有一个tag字段，它是为了在解析时，解析到相应的字段，其中grom标签grom在解析时字段的对应，json指明了在转化json不同字段的对应关系。而且TableName()函数必不可少，它是为了指定grom在解析的时候表明。
 
 ## 创建服务器启动类
-首先我们在根目录下创建cmd文件夹，然后在该文件夹下新建server文件夹，然后在server文件夹下创建main.go文件,然后添加以下内容。
->cmd/server/main.go
+首先我们在根目录下创建main.go文件,然后添加以下内容。
+>main.go
 ```go
 package main
 
@@ -348,7 +346,7 @@ router.go文件主要是为了注册不同的路由，并提供了一个InitRout
 
 ## 更改主函数
 在这里我们要为主函数添加初始化路由和初始化数据库。
->internal/cmd/server/main.go
+>main.go
 ```go
 package main
 
@@ -479,7 +477,7 @@ func jwtAuthenticator(ctx context.Context, c *app.RequestContext) (interface{}, 
 	}
 	return nil, jwt.ErrFailedAuthentication
 }
-func InitJwt() *jwt.HertzJWTMiddleware {
+func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 	authMiddleware, err := jwt.New(&jwt.HertzJWTMiddleware{
 		Realm: "test zone",
 		// 用于签名的密钥
@@ -519,7 +517,7 @@ func InitJwt() *jwt.HertzJWTMiddleware {
 	return authMiddleware
 }
 ```
-这里我们主要提供了一个对外暴露的InitJwt()函数，它可以让路由获取整个初始化后的中间件。接下来将讲述这了中间件的具体化初始步骤。
+这里我们主要提供了一个对外暴露的InitJwtAdmin()函数，它可以让路由获取整个初始化后的中间件。接下来将讲述这了中间件的具体化初始步骤。
 接下来将从上倒下介绍必要最重要的初始化参数。
 
 首先介绍四个比较简单的阐述
@@ -554,7 +552,7 @@ import (
 )
 
 func InitRouter(r *server.Hertz) {
-	myJwt := middleware.InitJwt()
+	myJwt := middleware.InitJwtAdmin()
 	adm := r.Group("/admin")
 
 	emp := adm.Group("/employee")

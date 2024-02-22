@@ -69,7 +69,7 @@ func jwtAuthenticator(ctx context.Context, c *app.RequestContext) (interface{}, 
 	}
 	return nil, jwt.ErrFailedAuthentication
 }
-func InitJwt() *jwt.HertzJWTMiddleware {
+func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 	authMiddleware, err := jwt.New(&jwt.HertzJWTMiddleware{
 		Realm: "test zone",
 		// 用于签名的密钥

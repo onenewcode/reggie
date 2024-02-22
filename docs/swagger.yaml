@@ -1,0 +1,25 @@
+basePath: /
+host: localhost:8080
+info:
+  contact:
+    name: onenewcode
+    url: https://github.com/onenewcode
+  description: sky-take-out
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: regiee
+  version: "0.1"
+paths:
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: 测试 Description
+      produces:
+      - application/json
+      responses: {}
+      summary: 测试 Summary
+schemes:
+- http
+swagger: "2.0"

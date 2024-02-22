@@ -9,9 +9,13 @@ import (
 )
 
 func InitRouter(r *server.Hertz) {
-	myJwt := middleware.InitJwt()
-	adm := r.Group("/admin")
+	swa := r.Group("/swagger")
+	{
+		middleware.InitSwagger(swa)
+	}
+	myJwt := middleware.InitJwtAdmin()
 
+	adm := r.Group("/admin")
 	emp := adm.Group("/employee")
 	emp.POST("/login", myJwt.LoginHandler)
 	// 注意我们要把登陆放到中间件的前面，因为一旦启用中间件，接下来的请求都需要经过jwt的校验
