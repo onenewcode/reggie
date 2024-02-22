@@ -10,6 +10,12 @@ import (
 	"reggie/internal/models/model"
 )
 
+// PingHandler 测试 handler
+// @Summary 测试 Summary
+// @Description 测试 Description
+// @Accept application/json
+// @Produce application/json
+// @Router /ping [get]
 func Login(ctx context.Context, c *app.RequestContext) {
 	var empL model.Employee
 	// 参数绑定转化为结构体
