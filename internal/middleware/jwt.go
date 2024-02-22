@@ -14,14 +14,22 @@ import (
 )
 
 var (
+	// 设置我们存储的信息在jwt中的哪一个字段
 	identityKey string = "reggie"
+	// 设置从哪里获取jwt的信息，格式如下
+	// - "header:<name>"
+	// - "query:<name>"
+	// - "cookie:<name>"
+	// - "param:<name>"
+	// - "form:<name>"
+	jwtToken = "header: token"
 )
 
 // 设置标识处理函数
 // 这里我们把通过定义identityKey获取负载的数据
 func jwtIdentityHandler(ctx context.Context, c *app.RequestContext) interface{} {
 	claims := jwt.ExtractClaims(ctx, c)
-	return claims[identityKey].(*vo.EmployeeLoginVO)
+	return claims[identityKey]
 }
 
 // 生成jwt负载的函数，指定了Authenticator方法生成的数据如何存储和怎么样存储c.Get("JWT_PAYLOAD")访问
@@ -72,15 +80,19 @@ func InitJwt() *jwt.HertzJWTMiddleware {
 		IdentityKey: identityKey,
 		// 用于生成JWT载荷部分的声明
 		PayloadFunc: jwtPayloadFunc,
-
+		// 作用在登录成功后的每次请求中，用于设置从 token 提取用户信息的函数
 		IdentityHandler: jwtIdentityHandler,
-		// 用户认证函数，负责验证登录凭据
+		// 用于设置登录时认证用户信息的函数
 		Authenticator: jwtAuthenticator,
 		LoginResponse: jwtLoginResponse,
+		// 设置从哪里获取jwt的信息
+		TokenLookup: jwtToken,
+		// 不设置jwt表名前缀
+		WithoutDefaultTokenHeadName: true,
 		//  当用户未通过身份验证或授权时，调用此函数返回错误信息
 		Unauthorized: func(ctx context.Context, c *app.RequestContext, code int, message string) {
 			// 不通过，响应401状态码
-			c.Status(401)
+			c.JSON(http.StatusNotFound, message)
 		},
 	})
 	if err != nil {
