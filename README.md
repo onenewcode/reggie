@@ -385,6 +385,21 @@ func main() {
 # 添加JWT和swagger文档
 
 ## jwt
+JWT（JSON Web Tokens）是一种开放标准（RFC 7519），用于在网络应用环境间安全地传输声明信息。它的主要作用包括：
+
+- 身份验证（Authentication）： JWT通常用于用户登录认证，当用户成功登录后，服务器会生成一个包含用户身份信息和其他必要数据的JWT令牌，并将其发送给客户端。客户端在后续请求中将此令牌作为HTTP Header的一部分发送回服务器。服务器通过验证这个令牌来确认用户的身份和权限，无需再查询数据库或存储session信息。
+
+- 授权（Authorization）： JWT可以携带访问控制所需的权限声明（claims），这些声明定义了持有者能访问哪些资源或者执行哪些操作。服务器根据令牌中的声明信息进行权限校验，决定是否允许客户端进行特定的操作。
+
+- 无状态性（Statelessness）： 因为所有的必要信息都编码在JWT中，服务器不再需要维护客户端的状态信息，从而简化了服务端的设计并有利于实现水平扩展。
+
+- 安全性（Security）： JWT通过数字签名（Signature）确保了数据的完整性和不可篡改性。使用密钥对令牌进行签名，服务器可以通过验证签名来确认令牌未被篡改且来自可信的源。
+
+- 跨域支持（CORS）： JWT可以在多个域名、子域之间共享，有助于实现单点登录（SSO）和微服务架构下的认证与授权需求。
+
+- 减少服务器负载（Reduced Server Load）： 由于JWT包含了足够的信息以供鉴权和授权，服务器在处理JWT时不需要额外查询数据库，从而降低了数据库查询次数，提高了系统的响应速度。
+
+在我们的项目中jwt主要用于身份验证。
 ### 创建EmployeeLoginVO
 这里我们为了让前端便于处理我们的数据和接受token，我们需要创建一个EmployeeLoginVO结构体。我们要在models文件夹下创建vo文件夹，然后新建common.go文件。
 >internal/models/vo/common.go
@@ -613,3 +628,128 @@ func InitRouter(r *server.Hertz) {
 ![im](images/img_3.png)
 
 这样我们整个jwt的功能就算大致完成了。
+
+## swagger
+wagger（现在被称为OpenAPI Specification，OAS）是一个用于描述RESTful API的标准格式和工具集。它允许开发人员使用YAML或JSON格式定义API的端点、输入参数、输出数据结构、HTTP方法以及认证要求等详细信息。
+
+通过Swagger提供的工具和服务，可以实现以下功能：
+1. API文档： Swagger自动生成交互式的API文档，让开发者能直观地了解API的各项接口及其用法，无需阅读冗长的文字说明。
+2. 设计与开发一致性： 在API设计阶段即可使用Swagger来定义API规范，确保在开发过程中遵循一致的设计标准。
+3. 模拟服务器： Swagger工具支持基于API定义生成模拟服务器，使得客户端开发者可以在后端服务尚未完成时就开始集成测试。
+4. 代码生成： 根据Swagger定义，可以为多种编程语言生成客户端库或者服务器端框架代码，大大提高了开发效率。
+5. 验证与测试： 开发者可以直接在Swagger UI上尝试调用API，并验证其响应结果是否符合预期，简化了API的调试过程。
+6. 自动化集成： 可以将Swagger文件与CI/CD流程相结合，自动进行API的构建、部署和版本管理。
+
+总之，Swagger/OpenAPI Specification是API生命周期管理中非常重要的一个工具，从设计到开发、测试再到最终的文档发布，都能提供有力的支持。
+### 创建swagger
+首先我们要安装swagger。
+因为从 Go 1.17 开始，在 go mod 模式下通过 go get 下载对应库文件将无法自动编译并安装到 $GOPATH/bin 的路径， 所以不再推荐用 go get 来安装可执行文件的方式。可以使用 go install来代替。
+在项目的根目录输入以下内容来安装swagger。
+>go install github.com/swaggo/swag/cmd/swag@latest
+
+然后在命令行运行
+>swag init
+
+这这是便会在根目录下生成一个名为docs的文件夹，这个文件夹下便记录了我们的所有注释的api信息。
+
+我们需要在middleware文件夹下创建swagger.go文件，我们在该文件添加以下内容。
+>internal/middleware/swagger.go
+```go
+package middleware
+
+import (
+	"github.com/cloudwego/hertz/pkg/route"
+	"github.com/hertz-contrib/swagger"
+	swaggerFiles "github.com/swaggo/files"
+)
+
+func InitSwagger(r *route.RouterGroup) {
+	url := swagger.URL("http://localhost:8080/swagger/doc.json") // The url pointing to API definition
+
+	r.GET("/*any", swagger.WrapHandler(swaggerFiles.Handler, url))
+}
+
+```
+
+其中InitSwagger()函数负责初始化swagger相关的内容，这个函数的主要目的是把swagger文档的内容映射在一个路径上。
+
+接着我们要修改路由。在router文件夹下的router.go文件添加以下内容。
+>internal/router/router.go
+```go
+func InitRouter(r *server.Hertz) {
+	swa := r.Group("/swagger")
+	{
+		middleware.InitSwagger(swa)
+	}
+	myJwt := middleware.InitJwtAdmin()
+
+	adm := r.Group("/admin")
+	emp := adm.Group("/employee")
+	emp.POST("/login", myJwt.LoginHandler)
+	// 注意我们要把登陆放到中间件的前面，因为一旦启用中间件，接下来的请求都需要经过jwt的校验
+	adm.Use(myJwt.MiddlewareFunc())
+	{
+		// 这里必须新生成一个emp，因为新生成的才含有我们的中间件
+		emp := adm.Group("/employee")
+		// 这是个测试方法，之后会测试我们的jwt是否拦截
+		emp.GET("/test", func(c context.Context, ctx *app.RequestContext) {
+			ctx.String(http.StatusOK, "Fds")
+		})
+	}
+
+}
+```
+然后我们需要在main.go中导入自己的docs文件路径。比如本项目叫reggic就导入以下路径
+>_ "reggie/docs"
+
+这样我们的swagger就配置完成了。
+### 测试
+首先我在根文件夹下的main.go文件添加注释。
+>main.go
+```go
+package main
+
+import (
+	"github.com/cloudwego/hertz/pkg/app/middlewares/server/recovery"
+	"github.com/cloudwego/hertz/pkg/app/server"
+	_ "reggie/docs"
+	"reggie/internal/config"
+	"reggie/internal/db"
+	"reggie/internal/router"
+)
+
+func init() {
+	config.InitConfig()
+	db.InitDB()
+}
+
+// @title regiee
+// @version 0.1
+// @description sky-take-out
+
+// @contact.name onenewcode
+// @contact.url https://github.com/onenewcode
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8080
+// @BasePath /
+// @schemes http
+func main() {
+	h := server.New(
+		server.WithHostPorts(config.ServerSetting.HttpPort),
+		server.WithReadTimeout(config.ServerSetting.ReadTimeout),
+		server.WithWriteTimeout(config.ServerSetting.WriteTimeout),
+	)
+	router.InitRouter(h)
+	h.Use(recovery.Recovery()) // 可确保即使在处理请求过程中发生未预期的错误或异常，服务也能维持运行状态
+	h.Spin()                   //可以实现优雅的推出
+}
+
+```
+然后我们在根目录运行
+>swag init  
+
+然后运行项目，访问 http://localhost:8080/swagger/index.html 如果出现以下界面就说明设置swagger配置成功，
+![swagger](images/img_4.png)
