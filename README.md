@@ -383,3 +383,235 @@ func main() {
 ![img.png](images/img1.png)
 点击登陆，出现以下界面就表示部署成功。
 ![img.png](images/img2.png)
+
+# 添加JWT和swagger文档
+
+## jwt
+### 创建EmployeeLoginVO
+这里我们为了让前端便于处理我们的数据和接受token，我们需要创建一个EmployeeLoginVO结构体。我们要在models文件夹下创建vo文件夹，然后新建common.go文件。
+>internal/models/vo/common.go
+```go
+package vo
+
+type EmployeeLoginVO struct {
+	Id int64 `json:"id,omitempty"`
+
+	UserName string `json:"user_name,omitempty"`
+
+	Name string `json:"name,omitempty"`
+
+	Token string `json:"token,omitempty"`
+}
+
+```
+### 构建JWT中间件
+首先我们要在internal文件夹下创建middleware文件夹，然后创建jwt.go文件，接着我们便开始完善我们的jwt文件。
+>internal/middleware/jwt.go
+```go
+package middleware
+
+import (
+	"context"
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/hertz-contrib/jwt"
+	"log"
+	"net/http"
+	"reggie/internal/db"
+	"reggie/internal/models/common"
+	"reggie/internal/models/model"
+	"reggie/internal/models/vo"
+	"time"
+)
+
+var (
+	// 设置我们存储的信息在jwt中的哪一个字段
+	identityKey string = "reggie"
+	// 设置从哪里获取jwt的信息，格式如下
+	// - "header:<name>"
+	// - "query:<name>"
+	// - "cookie:<name>"
+	// - "param:<name>"
+	// - "form:<name>"
+	jwtToken = "header: token"
+)
+
+// 设置标识处理函数
+// 这里我们把通过定义identityKey获取负载的数据
+func jwtIdentityHandler(ctx context.Context, c *app.RequestContext) interface{} {
+	claims := jwt.ExtractClaims(ctx, c)
+	return claims[identityKey]
+}
+
+// 生成jwt负载的函数，指定了Authenticator方法生成的数据如何存储和怎么样存储c.Get("JWT_PAYLOAD")访问
+func jwtPayloadFunc(data interface{}) jwt.MapClaims {
+	if v, ok := data.(*vo.EmployeeLoginVO); ok {
+		return jwt.MapClaims{
+			identityKey: v,
+		}
+	}
+	return jwt.MapClaims{}
+}
+
+func jwtLoginResponse(ctx context.Context, c *app.RequestContext, code int, token string, expire time.Time) {
+	var elv, _ = c.Get(identityKey)
+	rely := elv.(*vo.EmployeeLoginVO)
+	rely.Token = token
+	c.JSON(http.StatusOK, common.Result{1, "", rely})
+}
+
+// 返回值会被存在Claim数组中
+func jwtAuthenticator(ctx context.Context, c *app.RequestContext) (interface{}, error) {
+	var empl model.Employee
+	if err := c.BindAndValidate(&empl); err != nil {
+		return "", jwt.ErrMissingLoginValues
+	}
+	emp := db.EmpDao.GetByUserName(empl.Username)
+	if empl.Username == emp.Username && empl.Password == emp.Password {
+		elv := vo.EmployeeLoginVO{
+			Id:       emp.ID,
+			UserName: emp.Username,
+			Name:     emp.Name,
+			Token:    "",
+		}
+		// 这里我们把对象值存入c中，方便在返回函数中进行包装
+		c.Set(identityKey, &elv)
+		return &elv, nil
+	}
+	return nil, jwt.ErrFailedAuthentication
+}
+func InitJwt() *jwt.HertzJWTMiddleware {
+	authMiddleware, err := jwt.New(&jwt.HertzJWTMiddleware{
+		Realm: "test zone",
+		// 用于签名的密钥
+		Key:        []byte("secret key"),
+		Timeout:    time.Hour,
+		MaxRefresh: time.Hour,
+		// 用于在JWT中存储用户唯一标识身份的键值
+		IdentityKey: identityKey,
+		// 用于生成JWT载荷部分的声明
+		PayloadFunc: jwtPayloadFunc,
+		// 作用在登录成功后的每次请求中，用于设置从 token 提取用户信息的函数
+		IdentityHandler: jwtIdentityHandler,
+		// 用于设置登录时认证用户信息的函数
+		Authenticator: jwtAuthenticator,
+		LoginResponse: jwtLoginResponse,
+		// 设置从哪里获取jwt的信息
+		TokenLookup: jwtToken,
+		// 不设置jwt表名前缀
+		WithoutDefaultTokenHeadName: true,
+		//  当用户未通过身份验证或授权时，调用此函数返回错误信息
+		Unauthorized: func(ctx context.Context, c *app.RequestContext, code int, message string) {
+			// 不通过，响应401状态码
+			c.JSON(http.StatusNotFound, message)
+		},
+	})
+	if err != nil {
+		log.Fatal("JWT Error:" + err.Error())
+	}
+
+	// When you use jwt.New(), the function is already automatically called for checking,
+	// which means you don't need to call it again.
+	errInit := authMiddleware.MiddlewareInit()
+
+	if errInit != nil {
+		log.Fatal("authMiddleware.MiddlewareInit() Error:" + errInit.Error())
+	}
+	return authMiddleware
+}
+```
+这里我们主要提供了一个对外暴露的InitJwt()函数，它可以让路由获取整个初始化后的中间件。接下来将讲述这了中间件的具体化初始步骤。
+接下来将从上倒下介绍必要最重要的初始化参数。
+
+首先介绍四个比较简单的阐述
+- Realm: "test zone", 	 用于设置所属领域名称，默认为 hertz jwt
+- Key:        []byte("secret key"), 用于设置签名密钥（必要配置）
+- Timeout:    time.Hour, 用于设置 token 过期时间，默认为一小时
+- MaxRefresh: time.Hour, 用于设置最大 token 刷新时间，允许客户端在 TokenTime + MaxRefresh 内刷新 token 的有效时间，追加一个 Timeout 的时长
+- IdentityKey: 用于设置检索身份的键，
+
+接下来我们介绍一对一般搭配的参数，`PayloadFunc`和I`identityHandler`，其中`PayloadFunc`的作用是指明我们的数据如何存储于存储在jwt的具体Claims中，我们实现的自定义函数`jwtPayloadFunc`直接把数据转换成`EmployeeVO`存储在jwt中名叫reggie的自定义字段中。`identityHandler`是用于设置获取身份信息的函数，它指明如何解析请求获取的jwt token的有效信息，我们在自定义的` jwtPayloadFunc`,把数据存在reggie字段中，现在通过该字段获取数据即可。具体可以看`jwtIdentityHandler`的实现。
+
+`Authenticator`用于设置登录时认证用户信息的函数。其中我们自己实现的`jwtAuthenticator`函数作为Authenticator的参数，它在用户登陆时获取用户的用户名然后查询数据库，查询成功就对`Employee`包装为`EmployeeVo`类，然后把包装存储在`*app.RequestContext`,同时把返回值设置为包装后的对象。
+
+**注意** `jwtAuthenticator`函数的返回值将会被加密为我们的jwt令牌。
+
+最后一个比较重要的是`LoginResponse`参数，他表示用户登陆成功后的返回值，在我们实现的自定义`jwtLoginResponse`中我们先获取在`jwtAuthenticator`存储的`EmployeeVO`对象，然后把生成的token值赋予它，之后在进行包装之后直接返回。
+
+以上就是我们中间件实现流程的大致介绍。
+
+### 添加路由
+因为我们引入入了中间件，所以我们登陆这一功能不在依赖于employee_service.gow文件。所以我么要修改router.go文件，修改结果如下。
+>internal/router/router.go
+```go
+package router
+
+import (
+	"context"
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/app/server"
+	"net/http"
+	"reggie/internal/middleware"
+)
+
+func InitRouter(r *server.Hertz) {
+	myJwt := middleware.InitJwt()
+	adm := r.Group("/admin")
+
+	emp := adm.Group("/employee")
+	emp.POST("/login", myJwt.LoginHandler)
+	// 注意我们要把登陆放到中间件的前面，因为一旦启用中间件，接下来的请求都需要经过jwt的校验
+	adm.Use(myJwt.MiddlewareFunc())
+	{
+		// 这里必须新生成一个emp，因为新生成的才含有我们的中间件
+		emp := adm.Group("/employee")
+		// 这是个测试方法，之后会测试我们的jwt是否拦截
+		emp.GET("/test", func(c context.Context, ctx *app.RequestContext) {
+			ctx.String(http.StatusOK, "Fds")
+		})
+	}
+
+}
+```
+上面的代码，我们引入中间件，并让中间件校验`/admin`下的文件，我们还写了一个测试方法，可以通过访问 http://localhost:8080/admin/employee/test 测试我们是否有校验过我们的jwt令牌。
+
+### 测试jwt
+在我们启动项目后，可以通过postman或者apifox工具对我们的功能进行测试。这里以apifox为例。
+
+在打开工具后我们访问 http://localhost:8080/admin/employee/login 如果返回结果如下就证明我们的jwt加密成功。
+```shell
+{
+    "code": 1,
+    "msg": "",
+    "data": {
+        "id": 1,
+        "user_name": "admin",
+        "name": "管理员",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDg1ODEwMDgsIm9yaWdfaWF0IjoxNzA4NTc3NDA4LCJyZWdnaWUiOnsiaWQiOjEsInVzZXJfbmFtZSI6ImFkbWluIiwibmFtZSI6IueuoeeQhuWRmCJ9fQ.haQWlngPcb4Di3HGlJl4J4UTboWE9ROnXiqnnYHjrag"
+    }
+}
+```
+我们也可以通过在线的jwt解密网站判断加密的信息是否正确。
+这是上面jwt令牌的解析结果
+```shell
+{
+  "exp": 1708581008,
+  "orig_iat": 1708577408,
+  "reggie": {
+    "id": 1,
+    "user_name": "admin",
+    "name": "管理员"
+  }
+}
+```
+大家也可以自行访问 该网址 https://www.bejson.com/jwt/ 经行判断。
+
+接下来要测试我们的jwt 拦截是否成功 http://localhost:8080/admin/employee/test 拦截成功会出现以下结果。
+![im](images/img_1.png)
+
+接下来我们在我们的测试接口中，添加我们的jwt 令牌，我们在header中添加token字段，并把我们访问成功生成的jwt token值粘贴在里面。
+![im](images/img_2.png)
+
+接着我们再次访问。访问成功便会有以下结果
+![im](images/img_3.png)
+
+这样我们整个jwt的功能就算大致完成了。
