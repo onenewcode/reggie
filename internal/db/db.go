@@ -8,6 +8,7 @@ import (
 
 var (
 	DBEngine *gorm.DB
+	EmpDao   = EmployeeDao{}
 )
 
 func InitDB() {

@@ -2,11 +2,11 @@ package router
 
 import (
 	"github.com/cloudwego/hertz/pkg/app/server"
-	"reggie/internal/router/api"
+	"reggie/internal/middleware"
 )
 
 func InitRouter(r *server.Hertz) {
-	// 为每个静态资源目录创建一个 http.FileServer
+	myJwt := middleware.InitJwt()
 	emp := r.Group("/admin/employee")
-	emp.POST("/login", api.Login)
+	emp.POST("/login", myJwt.LoginHandler)
 }

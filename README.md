@@ -251,6 +251,7 @@ import (
 
 var (
 	DBEngine *gorm.DB
+	EmpDao   = EmployeeDao{}
 )
 
 func InitDB() {
@@ -268,8 +269,9 @@ func InitDB() {
 	DBEngine = db
 }
 
+
 ```
-InitDB()函数负责初始化数据库链接，并把初始化后的链接放在一个DBEngine的全局变量中。在InitDB()函数中我们暂时只用到配置文件中Database.Url后续会添加更多配置可选项。
+InitDB()函数负责初始化数据库链接，并把初始化后的链接放在一个DBEngine的全局变量中。在InitDB()函数中我们暂时只用到配置文件中Database.Url后续会添加更多配置可选项。而且会提供一个叫EmpDao的全局变量，以供用户操作employee表经行增删改查操作。
 
 接下来在db文件夹下创建employee_dao.go文件，这个文件主要负责employee表的各种sql操作。
 >internal/db/employee_dao.go
@@ -306,9 +308,6 @@ import (
 	"reggie/internal/models/model"
 )
 
-var (
-	empDao = db.EmployeeDao{}
-)
 
 func Login(ctx context.Context, c *app.RequestContext) {
 	var empL model.Employee
@@ -326,7 +325,7 @@ func Login(ctx context.Context, c *app.RequestContext) {
 
 }
 ```
-在这里我们先初始化一个私有的全局变量，接下来所有要调用sql的操作都通过这个私有的全局变量。在这个文件中暂时只实现一个Login()函数，如果查询不到用户就返回404，状态码设置位0，查找到后就设置状态码1，data设置为查找到的用户。
+在这个文件中暂时只实现一个Login()函数，如果查询不到用户就返回404，状态码设置位0，查找到后就设置状态码1，data设置为查找到的用户。其中本文件的进行查询时，用到了internal/db/db.go文件提供的全局变量。
 
 接下来我们就在router文件夹下的router.go文件夹下添加以下内容。
 >internal/router/router.go

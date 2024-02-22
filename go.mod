@@ -4,11 +4,12 @@ go 1.21.1
 
 require (
 	github.com/cloudwego/hertz v0.6.6
+	github.com/hertz-contrib/jwt v1.0.2
 	github.com/spf13/viper v1.16.0
 	gorm.io/driver/mysql v1.5.4
 	gorm.io/gen v0.3.25
 	gorm.io/gorm v1.25.7
-	gorm.io/plugin/dbresolver v1.5.0
+
 )
 
 require (
@@ -19,6 +20,7 @@ require (
 	github.com/cloudwego/netpoll v0.3.2 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/henrylee2cn/ameda v1.4.10 // indirect
@@ -35,7 +37,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/tidwall/gjson v1.13.0 // indirect
+	github.com/tidwall/gjson v1.14.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
@@ -49,4 +51,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/datatypes v1.1.1-0.20230130040222-c43177d3cf8c // indirect
 	gorm.io/hints v1.1.2 // indirect
+	gorm.io/plugin/dbresolver v1.5.0 // indirect
 )
