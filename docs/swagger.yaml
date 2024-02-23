@@ -11,15 +11,14 @@ info:
   title: regiee
   version: "0.1"
 paths:
-  /ping:
-    get:
+  /admin/employee:
+    post:
       consumes:
       - application/json
-      description: 测试 Description
       produces:
       - application/json
       responses: {}
-      summary: 测试 Summary
+      summary: 存储用户
 schemes:
 - http
 swagger: "2.0"

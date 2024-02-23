@@ -382,7 +382,7 @@ func main() {
 点击登陆，出现以下界面就表示部署成功。
 ![img.png](images/img2.png)
 
-# 添加JWT和swagger文档
+# 第二章 JWT和swagger文档
 
 ## jwt
 JWT（JSON Web Tokens）是一种开放标准（RFC 7519），用于在网络应用环境间安全地传输声明信息。它的主要作用包括：
@@ -847,3 +847,184 @@ func main() {
 
 然后运行项目，访问 http://localhost:8080/swagger/index.html 如果出现以下界面就说明设置swagger配置成功，
 ![swagger](images/img_4.png)
+
+# 第三章 完善管理员功能
+- 新增员工
+- 员工分页查询
+- 启用禁用员工账号
+- 编辑员工
+- 导入分类模块功能代码
+
+## 新增员工
+
+**注意事项：**
+
+1. 账号必须是唯一的
+2. 手机号为合法的11位手机号码
+3. 身份证号为合法的18位身份证号码
+4. 密码默认为123456
+
+###  代码开发
+首先我们要在 status_c和messages_s文件夹的common.go文件添加一些新的静态变量。
+>internal/models/constant/status_c/common.go
+```go
+//设置新用户的默认密码
+	DEFAULT_PASSWORD = "123456"
+```
+>internal/models/constant/messages_s/common.go
+```go
+ALREADY_EXISTS                 = "已存在"
+```
+#### router层
+
+**employee_router.go中创建新增员工方法**
+>internal/router/admin/employee.go
+```go
+// 存储用户
+// @Summary 存储用户
+// @Accept application/json
+// @Produce application/json
+// @router /admin/employee [post]
+func Save(ctx context.Context, c *app.RequestContext) {
+var empL model.Employee
+// 参数绑定转化为结构体
+err := c.Bind(&empL)
+if err != nil {
+log.Println("Employee 参数绑定失败")
+}
+log.Printf("新增用户:{%s}", empL.Username)
+flag := service.SavEmp(&empL)
+if flag == true {
+c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+c.JSON(http.StatusBadRequest, common.Result{1, message_c.ALREADY_EXISTS, nil})
+}
+```
+
+**注:** Result类定义了后端统一返回结果格式。其具体格式请参考
+>internal/models/common/common.go
+```go
+package common
+
+import "encoding/json"
+
+type Result struct {
+	Code uint        `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data"`
+}
+
+func (r Result) Error() string {
+	jsonBytes, _ := json.Marshal(r)
+
+	// 将JSON字节转为字符串并打印
+	return string(jsonBytes)
+}
+
+```
+
+
+####  Service层
+
+**在EmployeeServiceImpl中实现新增员工方法**
+>internal/router/service/employee_service.go
+
+```go
+// 添加成功返回true，添加失败返回flase
+func SavEmp(emp *model.Employee) bool {
+//设置账号的状态，默认正常状态 1表示正常 0表示锁定
+emp.Status = status_c.ENABLE
+
+//设置密码，默认密码123456
+emp.Password = status_c.DEFAULT_PASSWORD
+
+//设置当前记录的创建时间和修改时间
+emp.CreateTime, emp.UpdateTime = time.Now(), time.Now()
+
+//设置当前记录创建人id和修改人id
+emp.CreateUser, emp.UpdateUser = 1, 1 //目前是假数据，之后会继续完善
+if db.EmpDao.GetByUserName(emp.Username).Username != emp.Username {
+return false
+}
+db.EmpDao.Insert(emp)
+return true
+}
+
+```
+
+
+
+
+#### dao层
+
+**在employee_dao.go中声明Insert方法**
+>internal/db/employee/employee.go
+
+```go
+func (*EmployeeDao) Insert(emp *model.Employee) {
+    DBEngine.Create(emp)
+}
+```
+
+### 功能测试
+
+代码已经发开发完毕，对新增员工功能进行测试。
+
+**功能测试实现方式：**
+
+- 通过接口文档测试
+- 通前后端联调测试
+
+接下来我们使用上述两种方式分别测试。
+
+
+
+####  接口文档测试
+这里我们用apifox的测试工具经行测试。
+我们的访问地址为 http://localhost:8080/admin/employee 然后在请求中添加以下的json内容。
+json数据：
+```json
+{
+  "id": 0,
+  "idNumber": "111222333444555666",
+  "name": "xiaozhi",
+  "phone": "13812344321",
+  "sex": "1",
+  "username": "小智"
+}
+```
+具体的成果如下图
+![api测试](images/img_5.png)
+然后我们运行项目进行测试。返回结果为以下：
+- 响应码：404 报错
+- 请求体: auth header is empty
+
+这是因为我们jwt进行了校验，需要用户登陆才能添加用户。所以我们要先调用登陆api，然后把获取到的登陆的token粘贴到，我们添加用户的请求头。
+![api测试](images/img_6.png)
+
+然后我们在添加令牌之后重新测试添加用户这一个api。
+
+**查看employee表：**
+![api测试](images/img_7.png)
+
+测试成功。
+
+
+
+####  前后端联调测试
+
+启动nginx,访问 http://localhost
+
+登录-->员工管理-->添加员工
+
+![api测试](images/img_8.png)
+保存后，查看employee表
+![api测试](images/img_9.png)
+测试成功。
+
+
+
+**注意:** 由于开发阶段前端和后端是并行开发的，后端完成某个功能后，此时前端对应的功能可能还没有开发完成，
+导致无法进行前后端联调测试。所以在开发阶段，后端测试主要以接口文档测试为主。
+
+

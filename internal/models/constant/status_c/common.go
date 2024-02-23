@@ -9,4 +9,7 @@ const (
 
 	//禁用
 	DISABLE = 0
+
+	//设置新用户的默认密码
+	DEFAULT_PASSWORD = "123456"
 )

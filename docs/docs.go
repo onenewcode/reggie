@@ -22,16 +22,15 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/ping": {
-            "get": {
-                "description": "测试 Description",
+        "/admin/employee": {
+            "post": {
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "测试 Summary",
+                "summary": "存储用户",
                 "responses": {}
             }
         }

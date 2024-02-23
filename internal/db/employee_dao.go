@@ -10,3 +10,6 @@ func (*EmployeeDao) GetByUserName(username string) *model.Employee {
 	DBEngine.Where("username=?", username).First(&emp)
 	return &emp
 }
+func (*EmployeeDao) Insert(emp *model.Employee) {
+	DBEngine.Create(emp)
+}
