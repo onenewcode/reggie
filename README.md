@@ -526,12 +526,13 @@ func jwtLoginResponse(ctx context.Context, c *app.RequestContext, code int, toke
 func jwtAuthenticator(ctx context.Context, c *app.RequestContext) (interface{}, error) {
 	var empl model.Employee
 	if err := c.BindAndValidate(&empl); err != nil {
+		log.Println(jwt.ErrMissingLoginValues.Error())
 		return nil, common.Result{0, jwt.ErrMissingLoginValues.Error(), nil}
 	}
 	emp := db.EmpDao.GetByUserName(empl.Username)
 	var errorR common.Result
-	log.Println(emp)
 	if emp.Username != empl.Username {
+		log.Println(message_c.ACCOUNT_NOT_FOUND)
 		// 账号不存在
 		errorR = common.Result{0, message_c.ACCOUNT_NOT_FOUND, nil}
 		return nil, errorR
@@ -539,12 +540,14 @@ func jwtAuthenticator(ctx context.Context, c *app.RequestContext) (interface{}, 
 
 	//密码比对
 	if empl.Password != emp.Password {
+		log.Println(message_c.PASSWORD_ERROR)
 		//密码错误
 		errorR = common.Result{0, message_c.PASSWORD_ERROR, nil}
 		return nil, errorR
 	}
 
-	if empl.Status == status_c.DISABLE {
+	if emp.Status == status_c.DISABLE {
+		log.Println(message_c.ACCOUNT_LOCKED)
 		//账号被锁定
 		errorR = common.Result{0, message_c.ACCOUNT_LOCKED, nil}
 		return nil, errorR
@@ -576,7 +579,11 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 		IdentityHandler: jwtIdentityHandler,
 		// 用于设置登录时认证用户信息的函数
 		Authenticator: jwtAuthenticator,
+		// 登陆回复
 		LoginResponse: jwtLoginResponse,
+		LogoutResponse: func(ctx context.Context, c *app.RequestContext, code int) {
+			c.JSON(code, common.Result{1, "", nil})
+		},
 		// 设置从哪里获取jwt的信息
 		TokenLookup: jwtToken,
 		// 不设置jwt表名前缀
@@ -637,9 +644,13 @@ import (
 )
 
 func InitRouter(r *server.Hertz) {
+	swa := r.Group("/swagger")
+	{
+		middleware.InitSwagger(swa)
+	}
 	myJwt := middleware.InitJwtAdmin()
-	adm := r.Group("/admin")
 
+	adm := r.Group("/admin")
 	emp := adm.Group("/employee")
 	emp.POST("/login", myJwt.LoginHandler)
 	// 注意我们要把登陆放到中间件的前面，因为一旦启用中间件，接下来的请求都需要经过jwt的校验
@@ -647,6 +658,7 @@ func InitRouter(r *server.Hertz) {
 	{
 		// 这里必须新生成一个emp，因为新生成的才含有我们的中间件
 		emp := adm.Group("/employee")
+		emp.POST("/logout", myJwt.LogoutHandler)
 		// 这是个测试方法，之后会测试我们的jwt是否拦截
 		emp.GET("/test", func(c context.Context, ctx *app.RequestContext) {
 			ctx.String(http.StatusOK, "Fds")
@@ -746,6 +758,16 @@ func InitSwagger(r *route.RouterGroup) {
 接着我们要修改路由。在router文件夹下的router.go文件添加以下内容。
 >internal/router/router.go
 ```go
+package router
+
+import (
+	"context"
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/app/server"
+	"net/http"
+	"reggie/internal/middleware"
+)
+
 func InitRouter(r *server.Hertz) {
 	swa := r.Group("/swagger")
 	{
@@ -761,6 +783,7 @@ func InitRouter(r *server.Hertz) {
 	{
 		// 这里必须新生成一个emp，因为新生成的才含有我们的中间件
 		emp := adm.Group("/employee")
+		emp.POST("/logout", myJwt.LogoutHandler)
 		// 这是个测试方法，之后会测试我们的jwt是否拦截
 		emp.GET("/test", func(c context.Context, ctx *app.RequestContext) {
 			ctx.String(http.StatusOK, "Fds")
