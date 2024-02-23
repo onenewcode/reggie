@@ -943,7 +943,8 @@ emp.CreateTime, emp.UpdateTime = time.Now(), time.Now()
 
 //设置当前记录创建人id和修改人id
 emp.CreateUser, emp.UpdateUser = 1, 1 //目前是假数据，之后会继续完善
-if db.EmpDao.GetByUserName(emp.Username).Username != emp.Username {
+// 判断是否用户是否重名
+if db.EmpDao.GetByUserName(emp.Username).Username == emp.Username {
 return false
 }
 db.EmpDao.Insert(emp)
