@@ -4,11 +4,14 @@ import (
 	"context"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
+	"github.com/hertz-contrib/logger/accesslog"
 	"net/http"
 	"reggie/internal/middleware"
 )
 
 func InitRouter(r *server.Hertz) {
+	// 添加日志
+	r.Use(accesslog.New(accesslog.WithFormat("[${time}] ${status} - ${latency} ${method} ${path} ${queryParams}")))
 	swa := r.Group("/swagger")
 	{
 		middleware.InitSwagger(swa)

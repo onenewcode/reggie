@@ -1,4 +1,4 @@
-package api
+package admin
 
 import (
 	"context"
@@ -30,5 +30,15 @@ func Login(ctx context.Context, c *app.RequestContext) {
 		c.JSON(http.StatusNotFound, common.Result{0, "未知用户", nil})
 	}
 	c.JSON(http.StatusOK, common.Result{1, "", emp})
+
+}
+func Save(ctx context.Context, c *app.RequestContext) {
+	var empL model.Employee
+	// 参数绑定转化为结构体
+	err := c.Bind(&empL)
+	if err != nil {
+		log.Println("Employee 参数绑定失败")
+	}
+	log.Println("新增用户{}", empL)
 
 }

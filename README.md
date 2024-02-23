@@ -16,7 +16,7 @@
 │   │   └──  model          # 实体类文件
 │   │       └── employee.go   
 │   ├── router              # 存放路由
-│   │   ├── api             # 存放不同业务
+│   │   ├── admin            # 存放不同业务
 │   │   │   └── employee.go   
 │   │   └──  router.go      # 负责注册路由
 │   └── util                # 存放工具    
@@ -291,10 +291,10 @@ func (*EmployeeDao) GetByUserName(username string) *model.Employee {
 在这里我们定义了EmployeeDao类，所有的sql方法都由他实现，如果我们需要调用dao层操作，只需要生成一个类即可，调用所有的方法。
 
 ## 创建路由
-首先我们在internal文件夹下创建api文件夹和router.go文件。接着在api文件夹下创建employee_service.go文件，然后在文件夹下添加以下内容。
->internal/router/api/employee_service.go
+首先我们在internal文件夹下创建admin文件夹和router.go文件。接着在admin文件夹下创建employee_router.go文件，然后在文件夹下添加以下内容。
+>internal/router/admin/employee_router.go
 ```go
-package api
+package admin
 
 import (
 	"context"
@@ -332,13 +332,13 @@ package router
 
 import (
 	"github.com/cloudwego/hertz/pkg/app/server"
-	"reggie/internal/router/api"
+	"reggie/internal/router/admin"
 )
 
 func InitRouter(r *server.Hertz) {
 	// 为每个静态资源目录创建一个 http.FileServer
 	emp := r.Group("/admin/employee")
-	emp.POST("/login", api.Login)
+	emp.POST("/login", admin.Login)
 }
 
 ```
@@ -630,7 +630,7 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 以上就是我们中间件实现流程的大致介绍。
 
 ### 添加路由
-因为我们引入入了中间件，所以我们登陆这一功能不在依赖于employee_service.gow文件。所以我么要修改router.go文件，修改结果如下。
+因为我们引入入了中间件，所以我们登陆这一功能不在依赖于employee_router.gow文件。所以我么要修改router.go文件，修改结果如下。
 >internal/router/router.go
 ```go
 package router
