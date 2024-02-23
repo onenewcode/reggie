@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"reggie/internal/db"
 	"reggie/internal/models/common"
+	"reggie/internal/models/constant/message_c"
+	"reggie/internal/models/constant/status_c"
 	"reggie/internal/models/model"
 	"reggie/internal/models/vo"
 	"time"
@@ -53,21 +55,40 @@ func jwtLoginResponse(ctx context.Context, c *app.RequestContext, code int, toke
 func jwtAuthenticator(ctx context.Context, c *app.RequestContext) (interface{}, error) {
 	var empl model.Employee
 	if err := c.BindAndValidate(&empl); err != nil {
-		return "", jwt.ErrMissingLoginValues
+		return nil, common.Result{0, jwt.ErrMissingLoginValues.Error(), nil}
 	}
 	emp := db.EmpDao.GetByUserName(empl.Username)
-	if empl.Username == emp.Username && empl.Password == emp.Password {
-		elv := vo.EmployeeLoginVO{
-			Id:       emp.ID,
-			UserName: emp.Username,
-			Name:     emp.Name,
-			Token:    "",
-		}
-		// 这里我们把对象值存入c中，方便在返回函数中进行包装
-		c.Set(identityKey, &elv)
-		return &elv, nil
+	var errorR common.Result
+	log.Println(emp)
+	if emp.Username != empl.Username {
+		// 账号不存在
+		errorR = common.Result{0, message_c.ACCOUNT_NOT_FOUND, nil}
+		return nil, errorR
 	}
-	return nil, jwt.ErrFailedAuthentication
+
+	//密码比对
+	if empl.Password != emp.Password {
+		//密码错误
+		errorR = common.Result{0, message_c.PASSWORD_ERROR, nil}
+		return nil, errorR
+	}
+
+	if empl.Status == status_c.DISABLE {
+		//账号被锁定
+		errorR = common.Result{0, message_c.ACCOUNT_LOCKED, nil}
+		return nil, errorR
+	}
+
+	elv := vo.EmployeeLoginVO{
+		Id:       emp.ID,
+		UserName: emp.Username,
+		Name:     emp.Name,
+		Token:    "",
+	}
+	// 这里我们把对象值存入c中，方便在返回函数中进行包装
+	c.Set(identityKey, &elv)
+	return &elv, nil
+
 }
 func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 	authMiddleware, err := jwt.New(&jwt.HertzJWTMiddleware{
@@ -92,7 +113,7 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 		//  当用户未通过身份验证或授权时，调用此函数返回错误信息
 		Unauthorized: func(ctx context.Context, c *app.RequestContext, code int, message string) {
 			// 不通过，响应401状态码
-			c.JSON(http.StatusNotFound, message)
+			c.String(http.StatusNotFound, message)
 		},
 	})
 	if err != nil {

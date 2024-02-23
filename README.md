@@ -415,8 +415,56 @@ type EmployeeLoginVO struct {
 
 	Token string `json:"token,omitempty"`
 }
+```
+### 创建用于通知的静态变量。
+首先我们要在models文件夹下创建constant文件夹，并且在该文件夹下创建messages_c文件夹和status_c文件夹，并且在这两个文件夹都创建一个名叫common.go的文件。然后添加以下内容。
+>internal/models/constant/messages_c/common.go
+```go
+package message_c
+
+/**
+ * 信息提示常量类
+ */
+const (
+	PASSWORD_ERROR                 = "密码错误"
+	ACCOUNT_NOT_FOUND              = "账号不存在"
+	ACCOUNT_LOCKED                 = "账号被锁定"
+	UNKNOWN_ERROR                  = "未知错误"
+	USER_NOT_LOGIN                 = "用户未登录"
+	CATEGORY_BE_RELATED_BY_SETMEAL = "当前分类关联了套餐,不能删除"
+	CATEGORY_BE_RELATED_BY_DISH    = "当前分类关联了菜品,不能删除"
+	SHOPPING_CART_IS_NULL          = "购物车数据为空，不能下单"
+	ADDRESS_BOOK_IS_NULL           = "用户地址为空，不能下单"
+	LOGIN_FAILED                   = "登录失败"
+	UPLOAD_FAILED                  = "文件上传失败"
+	SETMEAL_ENABLE_FAILED          = "套餐内包含未启售菜品，无法启售"
+	PASSWORD_EDIT_FAILED           = "密码修改失败"
+	DISH_ON_SALE                   = "起售中的菜品不能删除"
+	SETMEAL_ON_SALE                = "起售中的套餐不能删除"
+	DISH_BE_RELATED_BY_SETMEAL     = "当前菜品关联了套餐,不能删除"
+	ORDER_STATUS_ERROR             = "订单状态错误"
+	ORDER_NOT_FOUND                = "订单不存在"
+)
+
 
 ```
+>internal/models/constant/status_c/common.go
+```go
+package status_c
+
+/**
+ * 状态常量，启用或者禁用
+ */
+const (
+	//启用
+	ENABLE = 1
+
+	//禁用
+	DISABLE = 0
+)
+
+```
+我们这样定义全局的错误报错可以让我们比较方便的修改报错信息。
 ### 构建JWT中间件
 首先我们要在internal文件夹下创建middleware文件夹，然后创建jwt.go文件，接着我们便开始完善我们的jwt文件。
 >internal/middleware/jwt.go
@@ -431,6 +479,8 @@ import (
 	"net/http"
 	"reggie/internal/db"
 	"reggie/internal/models/common"
+	"reggie/internal/models/constant/message_c"
+	"reggie/internal/models/constant/status_c"
 	"reggie/internal/models/model"
 	"reggie/internal/models/vo"
 	"time"
@@ -476,21 +526,40 @@ func jwtLoginResponse(ctx context.Context, c *app.RequestContext, code int, toke
 func jwtAuthenticator(ctx context.Context, c *app.RequestContext) (interface{}, error) {
 	var empl model.Employee
 	if err := c.BindAndValidate(&empl); err != nil {
-		return "", jwt.ErrMissingLoginValues
+		return nil, common.Result{0, jwt.ErrMissingLoginValues.Error(), nil}
 	}
 	emp := db.EmpDao.GetByUserName(empl.Username)
-	if empl.Username == emp.Username && empl.Password == emp.Password {
-		elv := vo.EmployeeLoginVO{
-			Id:       emp.ID,
-			UserName: emp.Username,
-			Name:     emp.Name,
-			Token:    "",
-		}
-		// 这里我们把对象值存入c中，方便在返回函数中进行包装
-		c.Set(identityKey, &elv)
-		return &elv, nil
+	var errorR common.Result
+	log.Println(emp)
+	if emp.Username != empl.Username {
+		// 账号不存在
+		errorR = common.Result{0, message_c.ACCOUNT_NOT_FOUND, nil}
+		return nil, errorR
 	}
-	return nil, jwt.ErrFailedAuthentication
+
+	//密码比对
+	if empl.Password != emp.Password {
+		//密码错误
+		errorR = common.Result{0, message_c.PASSWORD_ERROR, nil}
+		return nil, errorR
+	}
+
+	if empl.Status == status_c.DISABLE {
+		//账号被锁定
+		errorR = common.Result{0, message_c.ACCOUNT_LOCKED, nil}
+		return nil, errorR
+	}
+
+	elv := vo.EmployeeLoginVO{
+		Id:       emp.ID,
+		UserName: emp.Username,
+		Name:     emp.Name,
+		Token:    "",
+	}
+	// 这里我们把对象值存入c中，方便在返回函数中进行包装
+	c.Set(identityKey, &elv)
+	return &elv, nil
+
 }
 func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 	authMiddleware, err := jwt.New(&jwt.HertzJWTMiddleware{
@@ -515,7 +584,7 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 		//  当用户未通过身份验证或授权时，调用此函数返回错误信息
 		Unauthorized: func(ctx context.Context, c *app.RequestContext, code int, message string) {
 			// 不通过，响应401状态码
-			c.JSON(http.StatusNotFound, message)
+			c.String(http.StatusNotFound, message)
 		},
 	})
 	if err != nil {
@@ -531,6 +600,7 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 	}
 	return authMiddleware
 }
+
 ```
 这里我们主要提供了一个对外暴露的InitJwtAdmin()函数，它可以让路由获取整个初始化后的中间件。接下来将讲述这了中间件的具体化初始步骤。
 接下来将从上倒下介绍必要最重要的初始化参数。
@@ -544,12 +614,12 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 
 接下来我们介绍一对一般搭配的参数，`PayloadFunc`和I`identityHandler`，其中`PayloadFunc`的作用是指明我们的数据如何存储于存储在jwt的具体Claims中，我们实现的自定义函数`jwtPayloadFunc`直接把数据转换成`EmployeeVO`存储在jwt中名叫reggie的自定义字段中。`identityHandler`是用于设置获取身份信息的函数，它指明如何解析请求获取的jwt token的有效信息，我们在自定义的` jwtPayloadFunc`,把数据存在reggie字段中，现在通过该字段获取数据即可。具体可以看`jwtIdentityHandler`的实现。
 
-`Authenticator`用于设置登录时认证用户信息的函数。其中我们自己实现的`jwtAuthenticator`函数作为Authenticator的参数，它在用户登陆时获取用户的用户名然后查询数据库，查询成功就对`Employee`包装为`EmployeeVo`类，然后把包装存储在`*app.RequestContext`,同时把返回值设置为包装后的对象。
+`Authenticator`用于设置登录时认证用户信息的函数。其中我们自己实现的`jwtAuthenticator`函数作为Authenticator的参数，它在用户登陆时获取用户的用户名然后查询数据库，查询出来后就对各种属性进行依次判断，判断它是否合法，不合法就返回相应的错误信息，合法就对`Employee`包装为`EmployeeVo`类，然后把包装存储在`*app.RequestContext`,同时把返回值设置为包装后的对象。
 
 **注意** `jwtAuthenticator`函数的返回值将会被加密为我们的jwt令牌。
 
-最后一个比较重要的是`LoginResponse`参数，他表示用户登陆成功后的返回值，在我们实现的自定义`jwtLoginResponse`中我们先获取在`jwtAuthenticator`存储的`EmployeeVO`对象，然后把生成的token值赋予它，之后在进行包装之后直接返回。
-
+`LoginResponse`参数，他表示用户登陆成功后的返回值，在我们实现的自定义`jwtLoginResponse`中我们先获取在`jwtAuthenticator`存储的`EmployeeVO`对象，然后把生成的token值赋予它，之后在进行包装之后直接返回。
+`Unauthorized`参数是用户认证失败调用的函数，如果`Authenticator`的data返回值为nil就会调用这个函数。
 以上就是我们中间件实现流程的大致介绍。
 
 ### 添加路由
