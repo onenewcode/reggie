@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reggie/internal/db"
 	"reggie/internal/models/common"
+
 	"reggie/internal/models/constant/message_c"
 	"reggie/internal/models/constant/status_c"
 	"reggie/internal/models/model"
@@ -15,37 +16,37 @@ import (
 	"time"
 )
 
-var (
+const (
+	IdentityKey = "reggie"
 	// 设置我们存储的信息在jwt中的哪一个字段
-	identityKey string = "reggie"
 	// 设置从哪里获取jwt的信息，格式如下
 	// - "header:<name>"
 	// - "query:<name>"
 	// - "cookie:<name>"
 	// - "param:<name>"
 	// - "form:<name>"
-	jwtToken = "header: token"
+	JwtToken = "header: token"
 )
 
 // 设置标识处理函数
 // 这里我们把通过定义identityKey获取负载的数据
 func jwtIdentityHandler(ctx context.Context, c *app.RequestContext) interface{} {
 	claims := jwt.ExtractClaims(ctx, c)
-	return claims[identityKey]
+	return claims[IdentityKey]
 }
 
 // 生成jwt负载的函数，指定了Authenticator方法生成的数据如何存储和怎么样存储c.Get("JWT_PAYLOAD")访问
 func jwtPayloadFunc(data interface{}) jwt.MapClaims {
 	if v, ok := data.(*vo.EmployeeLoginVO); ok {
 		return jwt.MapClaims{
-			identityKey: v,
+			IdentityKey: v,
 		}
 	}
 	return jwt.MapClaims{}
 }
 
 func jwtLoginResponse(ctx context.Context, c *app.RequestContext, code int, token string, expire time.Time) {
-	var elv, _ = c.Get(identityKey)
+	var elv, _ = c.Get(IdentityKey)
 	rely := elv.(*vo.EmployeeLoginVO)
 	rely.Token = token
 	c.JSON(http.StatusOK, common.Result{1, "", rely})
@@ -89,7 +90,7 @@ func jwtAuthenticator(ctx context.Context, c *app.RequestContext) (interface{}, 
 		Token:    "",
 	}
 	// 这里我们把对象值存入c中，方便在返回函数中进行包装
-	c.Set(identityKey, &elv)
+	c.Set(IdentityKey, &elv)
 	return &elv, nil
 
 }
@@ -101,7 +102,7 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 		Timeout:    time.Hour,
 		MaxRefresh: time.Hour,
 		// 用于在JWT中存储用户唯一标识身份的键值
-		IdentityKey: identityKey,
+		IdentityKey: IdentityKey,
 		// 用于生成JWT载荷部分的声明
 		PayloadFunc: jwtPayloadFunc,
 		// 作用在登录成功后的每次请求中，用于设置从 token 提取用户信息的函数
@@ -114,7 +115,7 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 			c.JSON(code, common.Result{1, "", nil})
 		},
 		// 设置从哪里获取jwt的信息
-		TokenLookup: jwtToken,
+		TokenLookup: JwtToken,
 		// 不设置jwt表名前缀
 		WithoutDefaultTokenHeadName: true,
 		//  当用户未通过身份验证或授权时，调用此函数返回错误信息

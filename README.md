@@ -462,7 +462,6 @@ const (
 	//禁用
 	DISABLE = 0
 )
-
 ```
 我们这样定义全局的错误报错可以让我们比较方便的修改报错信息。
 ### 构建JWT中间件
@@ -479,6 +478,7 @@ import (
 	"net/http"
 	"reggie/internal/db"
 	"reggie/internal/models/common"
+
 	"reggie/internal/models/constant/message_c"
 	"reggie/internal/models/constant/status_c"
 	"reggie/internal/models/model"
@@ -486,37 +486,37 @@ import (
 	"time"
 )
 
-var (
+const (
+	IdentityKey = "reggie"
 	// 设置我们存储的信息在jwt中的哪一个字段
-	identityKey string = "reggie"
 	// 设置从哪里获取jwt的信息，格式如下
 	// - "header:<name>"
 	// - "query:<name>"
 	// - "cookie:<name>"
 	// - "param:<name>"
 	// - "form:<name>"
-	jwtToken = "header: token"
-)
+	JwtToken = "header: token"
 
+)
 // 设置标识处理函数
 // 这里我们把通过定义identityKey获取负载的数据
 func jwtIdentityHandler(ctx context.Context, c *app.RequestContext) interface{} {
 	claims := jwt.ExtractClaims(ctx, c)
-	return claims[identityKey]
+	return claims[IdentityKey]
 }
 
 // 生成jwt负载的函数，指定了Authenticator方法生成的数据如何存储和怎么样存储c.Get("JWT_PAYLOAD")访问
 func jwtPayloadFunc(data interface{}) jwt.MapClaims {
 	if v, ok := data.(*vo.EmployeeLoginVO); ok {
 		return jwt.MapClaims{
-			identityKey: v,
+			IdentityKey: v,
 		}
 	}
 	return jwt.MapClaims{}
 }
 
 func jwtLoginResponse(ctx context.Context, c *app.RequestContext, code int, token string, expire time.Time) {
-	var elv, _ = c.Get(identityKey)
+	var elv, _ = c.Get(IdentityKey)
 	rely := elv.(*vo.EmployeeLoginVO)
 	rely.Token = token
 	c.JSON(http.StatusOK, common.Result{1, "", rely})
@@ -560,7 +560,7 @@ func jwtAuthenticator(ctx context.Context, c *app.RequestContext) (interface{}, 
 		Token:    "",
 	}
 	// 这里我们把对象值存入c中，方便在返回函数中进行包装
-	c.Set(identityKey, &elv)
+	c.Set(IdentityKey, &elv)
 	return &elv, nil
 
 }
@@ -572,7 +572,7 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 		Timeout:    time.Hour,
 		MaxRefresh: time.Hour,
 		// 用于在JWT中存储用户唯一标识身份的键值
-		IdentityKey: identityKey,
+		IdentityKey: IdentityKey,
 		// 用于生成JWT载荷部分的声明
 		PayloadFunc: jwtPayloadFunc,
 		// 作用在登录成功后的每次请求中，用于设置从 token 提取用户信息的函数
@@ -585,7 +585,7 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 			c.JSON(code, common.Result{1, "", nil})
 		},
 		// 设置从哪里获取jwt的信息
-		TokenLookup: jwtToken,
+		TokenLookup: JwtToken,
 		// 不设置jwt表名前缀
 		WithoutDefaultTokenHeadName: true,
 		//  当用户未通过身份验证或授权时，调用此函数返回错误信息
@@ -1027,5 +1027,89 @@ json数据：
 
 **注意:** 由于开发阶段前端和后端是并行开发的，后端完成某个功能后，此时前端对应的功能可能还没有开发完成，
 导致无法进行前后端联调测试。所以在开发阶段，后端测试主要以接口文档测试为主。
+
+
+
+
+### 代码完善
+
+目前，程序存在的问题主要有一个：
+
+- 新增员工时，创建人id和修改人id设置为固定值
+
+
+
+**描述**：新增员工时，创建人id和修改人id设置为固定值
+
+**分析：**
+
+```go
+func SavEmp(emp *model.Employee) bool {
+/////
+//设置当前记录创建人id和修改人id
+emp.CreateUser, emp.UpdateUser = 1, 1 //目前是假数据，之后会继续完善
+/////
+}
+```
+
+**解决：**
+
+通过某种方式动态获取当前登录员工的id。
+![d](images/img_10.png)
+
+员工登录成功后会生成JWT令牌并响应给前端，jwt令牌中存贮这一些用户的信息：后续请求中，前端会携带JWT令牌，通过JWT令牌可以解析出当前登录员工id：
+我们的中间件会把jwt 令牌信息存储在app.RequestContext中，其中可以通过`c.Get("JWT_PAYLOAD")`获取，数据的存储格式为map[string]interface{}嵌套结构组成的。
+
+所以我们要修改employee_router.go中的Save函数，让它获取用户的id数据，注入一个`Employee`类中的，`UpdateUser`和`CreateUser`属性，并传递给service层。
+>internal/router/admin/employee_router.go
+```go
+func Save(ctx context.Context, c *app.RequestContext) {
+	var empL model.Employee
+	// 参数绑定转化为结构体
+	err := c.Bind(&empL)
+	if err != nil {
+		log.Println("Employee 参数绑定失败")
+		c.JSON(http.StatusBadRequest, common.Result{1, message_c.UNKNOWN_ERROR, nil})
+	} else {
+		// 获取jwt_payload的信息,并把信息赋予empL
+		{
+			jwt_payload, _ := c.Get("JWT_PAYLOAD")
+			// 类型转换,我们的数据在claims中是以map[string]interface{}嵌套结构组成的。
+			claims := jwt_payload.(jwt.MapClaims)
+			origin_emp := claims[middleware.IdentityKey].(map[string]interface{})
+			emp_id := origin_emp["id"].(float64)
+			empL.CreateUser, empL.UpdateUser = int64(emp_id), int64(emp_id)
+		}
+		log.Printf("新增用户:{%s}", empL.Username)
+		flag := service.SavEmp(&empL)
+		if flag == true {
+			c.JSON(http.StatusOK, common.Result{1, "", nil})
+		}
+		c.JSON(http.StatusBadRequest, common.Result{1, message_c.ALREADY_EXISTS, nil})
+	}
+}
+```
+同时我们还要删除service层给`UpdateUser`和`CreateUser`属性赋值的代码。
+```go
+func SavEmp(emp *model.Employee) bool {
+	//设置账号的状态，默认正常状态 1表示正常 0表示锁定
+	emp.Status = status_c.ENABLE
+
+	//设置密码，默认密码123456
+	emp.Password = status_c.DEFAULT_PASSWORD
+
+	//设置当前记录的创建时间和修改时间
+	emp.CreateTime, emp.UpdateTime = time.Now(), time.Now()
+
+	//设置当前记录创建人id和修改人id
+	//emp.CreateUser, emp.UpdateUser = 1, 1 //目前是假数据，之后会继续完善
+	// 判断是否用户是否重名
+	if db.EmpDao.GetByUserName(emp.Username).Username == emp.Username {
+		return false
+	}
+	db.EmpDao.Insert(emp)
+	return true
+}
+```
 
 
