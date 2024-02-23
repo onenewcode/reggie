@@ -773,6 +773,7 @@ func InitRouter(r *server.Hertz) {
 >_ "reggie/docs"
 
 这样我们的swagger就配置完成了。
+其中swagger的注释可以参考以下链接 https://github.com/swaggo/swag/blob/master/README_zh-CN.md#%E5%A3%B0%E6%98%8E%E5%BC%8F%E6%B3%A8%E9%87%8A%E6%A0%BC%E5%BC%8F
 ### 测试
 首先我在根文件夹下的main.go文件添加注释。
 >main.go
