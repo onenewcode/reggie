@@ -875,6 +875,39 @@ func main() {
 ```go
 ALREADY_EXISTS                 = "已存在"
 ```
+#### 添加路由
+我们要在路由中添加以下内容
+>internal/router/router.go
+```go
+func InitRouter(r *server.Hertz) {
+	// 添加日志
+	r.Use(accesslog.New(accesslog.WithFormat("[${time}] ${status} - ${latency} ${method} ${path} ${queryParams}")))
+	swa := r.Group("/swagger")
+	{
+		middleware.InitSwagger(swa)
+	}
+	myJwt := middleware.InitJwtAdmin()
+
+	adm := r.Group("/admin")
+	emp := adm.Group("/employee")
+	emp.POST("/login", myJwt.LoginHandler)
+	// 注意我们要把登陆放到中间件的前面，因为一旦启用中间件，接下来的请求都需要经过jwt的校验
+	adm.Use(myJwt.MiddlewareFunc())
+	{
+		// 这里必须新生成一个emp，因为新生成的才含有我们的中间件
+		emp := adm.Group("/employee")
+		// 启动jwt
+		emp.POST("/logout", myJwt.LogoutHandler)
+		// 添加雇员接口
+		// 这是个测试方法，之后会测试我们的jwt是否拦截
+		emp.GET("/test", func(c context.Context, ctx *app.RequestContext) {
+			ctx.String(http.StatusOK, "Fds")
+		})
+
+	}
+
+}
+```
 #### router层
 
 **employee_router.go中创建新增员工方法**
@@ -885,7 +918,7 @@ ALREADY_EXISTS                 = "已存在"
 // @Accept application/json
 // @Produce application/json
 // @router /admin/employee [post]
-func Save(ctx context.Context, c *app.RequestContext) {
+func SaveEmp(ctx context.Context, c *app.RequestContext) {
 var empL model.Employee
 // 参数绑定转化为结构体
 err := c.Bind(&empL)
@@ -1060,10 +1093,10 @@ emp.CreateUser, emp.UpdateUser = 1, 1 //目前是假数据，之后会继续完�
 员工登录成功后会生成JWT令牌并响应给前端，jwt令牌中存贮这一些用户的信息：后续请求中，前端会携带JWT令牌，通过JWT令牌可以解析出当前登录员工id：
 我们的中间件会把jwt 令牌信息存储在app.RequestContext中，其中可以通过`c.Get("JWT_PAYLOAD")`获取，数据的存储格式为map[string]interface{}嵌套结构组成的。
 
-所以我们要修改employee_router.go中的Save函数，让它获取用户的id数据，注入一个`Employee`类中的，`UpdateUser`和`CreateUser`属性，并传递给service层。
+所以我们要修改employee_router.go中的SaveEmp函数，让它获取用户的id数据，注入一个`Employee`类中的，`UpdateUser`和`CreateUser`属性，并传递给service层。
 >internal/router/admin/employee_router.go
 ```go
-func Save(ctx context.Context, c *app.RequestContext) {
+func SaveEmp(ctx context.Context, c *app.RequestContext) {
 	var empL model.Employee
 	// 参数绑定转化为结构体
 	err := c.Bind(&empL)
@@ -1112,4 +1145,188 @@ func SavEmp(emp *model.Employee) bool {
 }
 ```
 
+
+
+## 员工分页查询
+
+### 需求分析和设计
+
+####  产品原型
+
+系统中的员工很多的时候，如果在一个页面中全部展示出来会显得比较乱，不便于查看，所以一般的系统中都会以分页的方式来展示列表数据。而在我们的分页查询页面中, 除了分页条件以外，还有一个查询条件 "员工姓名"。
+
+**查询员工原型：**
+![im](images/img_11.png)
+
+**业务规则**：
+
+- 根据页码展示员工信息
+- 每页展示10条数据
+- 分页查询时可以根据需要，输入员工姓名进行查询
+
+###  代码开发
+
+#### 设计DTO类
+
+根据请求参数进行封装，要在dto的common.go文件下添加以下内容
+>internal/models/dto/common.go
+```go
+type EmployeePageQueryDTO struct {
+//员工姓名
+Name *string `json:"name,omitempty" form:"name,omitempty"`
+//页码
+Page int `json:"page,omitempty" form:"page,omitempty"`
+//每页显示记录数
+PageSize int `json:"pageSize,omitempty" form:"pageSize,omitempty"`
+}
+
+```
+
+
+
+####  封装PageResult
+
+后面所有的分页查询，统一都封装为PageResult对象。我们要在common文件夹下的common.go添加以下内容。
+>internal/models/common/common.go
+
+```go
+
+type PageResult struct {
+	Total   int64      `json:"total,omitempty"`   //总记录数
+	Records *list.List `json:"records,omitempty"` //当前页数据集合
+
+}
+
+```
+
+员工信息分页查询后端返回的对象类型为: Result<PageResult>,我们可以查看common/common.go的Result结构体。
+>internal/models/common/common.go
+```go
+type Result struct {
+	Code uint        `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data"`
+}
+
+func (r Result) Error() string {
+	jsonBytes, _ := json.Marshal(r)
+
+	// 将JSON字节转为字符串并打印
+	return string(jsonBytes)
+}
+```
+
+
+#### 添加路由
+我们要在根路由添加我们的分页路由。
+>internal/router/router.go
+```go
+// 添加雇员接口
+		emp.POST("", admin.SaveEmp)
+```
+#### router层
+
+在sky-server模块中，com.sky.controller.admin.EmployeeController中添加分页查询方法。
+我们需要在router层添加分页查询方法。
+>internal/router/admin/employee_router.go
+```go
+// 分页查询
+// @Summary 分页查询
+// @Accept application/json
+// @Produce application/json
+// @router /admin/employee/page [get]
+func PageEmp(ctx context.Context, c *app.RequestContext) {
+	var page dto.EmployeePageQueryDTO
+	// 参数绑定转化为结构体
+	err := c.Bind(&page)
+	if err != nil {
+		log.Println("Employee 参数绑定失败")
+		c.JSON(http.StatusBadRequest, common.Result{1, message_c.UNKNOWN_ERROR, nil})
+	} else {
+		log.Println("员工分页查询，参数为：", page.Name)
+
+		c.JSON(http.StatusOK, common.Result{1, "", service.PageQueryEmp(&page)})
+	}
+}
+
+```
+
+
+
+
+####  dao层
+
+在 EmployeeDao 中实现 PageQuery 方法：
+值得注意的是我们还需要通过name判断是否进行模糊查询。
+
+```go
+func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) *[]model.Employee {
+	var users []model.Employee
+	origin_sql := DBEngine.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc")
+	// 判断是否含有name，有name不为nil，就进行模糊查询。
+	if page.Name == nil {
+		origin_sql.Find(&users)
+		return &users
+	} else {
+		origin_sql.Where("name LIKE ?", "%"+*page.Name+"%").Find(&users)
+		return &users
+	}
+}
+```
+
+
+
+### 测试
+
+可以通过接口文档进行测试，也可以进行前后端联调测试。
+
+接下来使用两种方式分别测试：
+
+
+
+#### 接口文档测试
+打开apifox，添加访问地址 http://localhost:8080/admin/employee/page
+然后在params添加以下参数。
+![](images/img_12.png)
+
+然后运行程序，进行测试，测试结果如下
+```json
+{
+    "code": 1,
+    "msg": "",
+    "data": {
+        "total": 1,
+        "records": [
+            {
+                "id": 4,
+                "name": "xiaozhi",
+                "username": "小智",
+                "password": "123456",
+                "phone": "13812344321",
+                "sex": "1",
+                "id_number": "",
+                "status": 1,
+                "create_time": "2024-02-23T16:08:30+08:00",
+                "update_time": "2024-02-23T16:08:30+08:00",
+                "create_user": 1,
+                "update_user": 1
+            }
+        ]
+    }
+}
+```
+如果出现**auth header is empty**的报错，是因为我们的jwt进行了拦截，需要我们登陆获取token，然后粘贴到我们的分页请求中的请求头上。
+
+
+
+####  前后端联调测试
+登陆
+**点击员工管理**
+![](images/img_13.png)
+
+
+**输入员工姓名为zhangsan**
+![](images/img_14.png)
+
+不难发现，**最后操作时间格式**不显示，在**代码完善**中解决。
 

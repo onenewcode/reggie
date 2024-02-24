@@ -2,13 +2,15 @@ package service
 
 import (
 	"reggie/internal/db"
+	"reggie/internal/models/common"
 	"reggie/internal/models/constant/status_c"
+	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 	"time"
 )
 
 // 添加成功返回true，添加失败返回flase
-func SavEmp(emp *model.Employee) bool {
+func SaveEmp(emp *model.Employee) bool {
 	//设置账号的状态，默认正常状态 1表示正常 0表示锁定
 	emp.Status = status_c.ENABLE
 
@@ -26,4 +28,11 @@ func SavEmp(emp *model.Employee) bool {
 	}
 	db.EmpDao.Insert(emp)
 	return true
+}
+func PageQueryEmp(page *dto.EmployeePageQueryDTO) *common.PageResult {
+	var pageResult = common.PageResult{}
+	tmp := db.EmpDao.PageQuery(page)
+	pageResult.Records, pageResult.Total = tmp, len(*tmp)
+
+	return &pageResult
 }

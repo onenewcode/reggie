@@ -27,12 +27,16 @@ func InitRouter(r *server.Hertz) {
 	{
 		// 这里必须新生成一个emp，因为新生成的才含有我们的中间件
 		emp := adm.Group("/employee")
+		// 启动jwt
 		emp.POST("/logout", myJwt.LogoutHandler)
-		emp.POST("", admin.Save)
+		// 添加雇员接口
+		emp.POST("", admin.SaveEmp)
+		emp.GET("/page", admin.PageEmp)
 		// 这是个测试方法，之后会测试我们的jwt是否拦截
 		emp.GET("/test", func(c context.Context, ctx *app.RequestContext) {
 			ctx.String(http.StatusOK, "Fds")
 		})
+
 	}
 
 }
