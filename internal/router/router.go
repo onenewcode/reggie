@@ -31,6 +31,8 @@ func InitRouter(r *server.Hertz) {
 		emp.POST("/logout", myJwt.LogoutHandler)
 		// 添加雇员接口
 		emp.POST("", admin.SaveEmp)
+		// 禁用员工账号
+		emp.POST("/status/*status", admin.StartOrStopEmp)
 		emp.GET("/page", admin.PageEmp)
 		// 这是个测试方法，之后会测试我们的jwt是否拦截
 		emp.GET("/test", func(c context.Context, ctx *app.RequestContext) {

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"log"
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 )
@@ -28,4 +29,9 @@ func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) *[]model.Employee 
 		origin_sql.Where("name LIKE ?", "%"+*page.Name+"%").Find(&users)
 		return &users
 	}
+}
+
+func (*EmployeeDao) UpdateStatus(emp *model.Employee) {
+	log.Println(*emp)
+	DBEngine.Select("status", "update_time", "update_user").Updates(emp)
 }

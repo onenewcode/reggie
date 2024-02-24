@@ -1330,3 +1330,165 @@ func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) *[]model.Employee 
 
 不难发现，**最后操作时间格式**不显示，在**代码完善**中解决。
 
+因为不会改前端，暂且没想到较好的解决办法，先搁置改bug。
+
+
+
+
+##  启用禁用员工账号
+
+###  需求分析与设计
+####  产品原型
+
+在员工管理列表页面，可以对某个员工账号进行启用或者禁用操作。账号禁用的员工不能登录系统，启用后的员工可以正常登录。如果某个员工账号状态为正常，则按钮显示为 "禁用"，如果员工账号状态为已禁用，则按钮显示为"启用"。
+
+**启禁用员工原型：**
+
+![](images/img_15.png)
+**业务规则：**
+
+- 可以对状态为“启用” 的员工账号进行“禁用”操作
+- 可以对状态为“禁用”的员工账号进行“启用”操作
+- 状态为“禁用”的员工账号不能登录系统
+
+
+
+#### 接口设计
+
+![](images/img_16.png)
+
+1). 路径参数携带状态值。
+
+2). 同时，把id传递过去，明确对哪个用户进行操作。
+
+3). 返回数据code状态是必须，其它是非必须。
+
+
+
+### 代码开发
+
+#### 修改代码
+首先我们要把获取Jwt信息的方法封装成一个函数，因为我们的其他函数可能也需要获取jwt的信息。我们要在jwt.go文件添加以下内容。
+>internal/middleware/jwt.go
+```javascript
+func GetJwtPayload(c *app.RequestContext) int64 {
+
+	jwt_payload, _ := c.Get("JWT_PAYLOAD")
+	// 类型转换,我们的数据在claims中是以map[string]interface{}嵌套结构组成的。
+	claims := jwt_payload.(jwt.MapClaims)
+	origin_emp := claims[IdentityKey].(map[string]interface{})
+	emp_id := origin_emp["id"].(float64)
+	return int64(emp_id)
+}
+```
+然后也要同步修改employee_router.go的SaveEmp函数中的方法。
+>internal/router/admin/employee_router.go
+```go
+func SaveEmp(ctx context.Context, c *app.RequestContext) {
+	var empL model.Employee
+	// 参数绑定转化为结构体
+	err := c.Bind(&empL)
+	if err != nil {
+		log.Println("Employee 参数绑定失败")
+		c.JSON(http.StatusBadRequest, common.Result{1, message_c.UNKNOWN_ERROR, nil})
+	} else {
+		// 获取jwt_payload的信息,并把信息赋予empL
+		emp_id := middleware.GetJwtPayload(c)
+		empL.CreateUser, empL.UpdateUser = emp_id, emp_id
+		log.Printf("新增用户:{%s}", empL.Username)
+		flag := service.SaveEmp(&empL)
+		if flag == true {
+			c.JSON(http.StatusOK, common.Result{1, "", nil})
+		}
+		c.JSON(http.StatusBadRequest, common.Result{1, message_c.ALREADY_EXISTS, nil})
+	}
+}
+```
+#### 添加路由
+我们首先要在在根路由中添加我们的启用禁用员工账号的路由。
+>internal/router/router.go
+```go
+	// 禁用员工账号
+		emp.POST("/status/*status", admin.StartOrStopEmp)
+```
+####  router层
+
+service模块中，根据接口设计中的请求参数形式对应的在 employee_router.go中创建启用禁用员工账号的方法：
+>internal/router/admin/employee_router.go
+```go
+// 禁用员工账号
+// @Summary 禁用员工账号
+// @Accept application/json
+// @Produce application/json
+// @router /admin/employee/status [post]
+func StartOrStopEmp(ctx context.Context, c *app.RequestContext) {
+	status, id := c.Param("status"), c.Query("id")
+	log.Printf("启用禁用员工账号：{%s},{%s}", status, id)
+	status_r, _ := strconv.ParseInt(status, 10, 32)
+	id_r, _ := strconv.ParseInt(id, 10, 64)
+	service.StartOrStopEmp(int32(status_r), id_r, middleware.GetJwtPayload(c))
+	c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+```
+
+
+#### service层
+
+在 employee_service.go 中实现启用禁用员工账号的业务方法StartOrStopEmp：
+>internal/router/service/employee_service.go
+```go
+func StartOrStopEmp(status int32, id int64, update_user int64) {
+	emp := model.Employee{
+		ID:         id,
+		Status:     status,
+		UpdateUser: update_user,
+		UpdateTime: time.Now(),
+	}
+	db.EmpDao.UpdateStatus(&emp)
+}
+```
+
+
+
+#### dao层
+
+在 employee_dao.go中添加 Update 方法：
+>internal/db/employee_dao.go
+```go
+func (*EmployeeDao) UpdateStatus(emp *model.Employee) {
+log.Println(*emp)
+DBEngine.Select("status", "update_time", "update_user").Updates(emp)
+}
+
+```
+
+
+### 功能测试
+
+#### 接口文档测试
+打开apifox 访问我们的地址 http://localhost:8080/admin/employee/status/0
+然后我们在Params中添加参数,同时在herder中添加我们的jwt令牌
+![](images/img_17.png)
+
+**测试前:** 查询employee表中员工账号状态
+![](images/img_18.png)
+
+**开始测试**
+![](images/img_19.png)
+
+
+**测试完毕后**，再次查询员工账号状态
+![](images/img_20.png)
+
+#### 前后端联调测试
+
+**测试前：**
+![](images/img_21.png)
+
+**点击启用:**
+![](images/img_22.png)
+
+
+
+
+

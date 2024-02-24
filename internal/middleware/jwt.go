@@ -28,6 +28,16 @@ const (
 	JwtToken = "header: token"
 )
 
+func GetJwtPayload(c *app.RequestContext) int64 {
+
+	jwt_payload, _ := c.Get("JWT_PAYLOAD")
+	// 类型转换,我们的数据在claims中是以map[string]interface{}嵌套结构组成的。
+	claims := jwt_payload.(jwt.MapClaims)
+	origin_emp := claims[IdentityKey].(map[string]interface{})
+	emp_id := origin_emp["id"].(float64)
+	return int64(emp_id)
+}
+
 // 设置标识处理函数
 // 这里我们把通过定义identityKey获取负载的数据
 func jwtIdentityHandler(ctx context.Context, c *app.RequestContext) interface{} {

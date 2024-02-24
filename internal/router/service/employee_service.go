@@ -36,3 +36,13 @@ func PageQueryEmp(page *dto.EmployeePageQueryDTO) *common.PageResult {
 
 	return &pageResult
 }
+
+func StartOrStopEmp(status int32, id int64, update_user int64) {
+	emp := model.Employee{
+		ID:         id,
+		Status:     status,
+		UpdateUser: update_user,
+		UpdateTime: time.Now(),
+	}
+	db.EmpDao.UpdateStatus(&emp)
+}

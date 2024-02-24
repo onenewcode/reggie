@@ -3,7 +3,6 @@ package admin
 import (
 	"context"
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/hertz-contrib/jwt"
 	"log"
 	"net/http"
 	"reggie/internal/middleware"
@@ -12,6 +11,7 @@ import (
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 	"reggie/internal/router/service"
+	"strconv"
 )
 
 // 存储用户
@@ -28,14 +28,8 @@ func SaveEmp(ctx context.Context, c *app.RequestContext) {
 		c.JSON(http.StatusBadRequest, common.Result{1, message_c.UNKNOWN_ERROR, nil})
 	} else {
 		// 获取jwt_payload的信息,并把信息赋予empL
-		{
-			jwt_payload, _ := c.Get("JWT_PAYLOAD")
-			// 类型转换,我们的数据在claims中是以map[string]interface{}嵌套结构组成的。
-			claims := jwt_payload.(jwt.MapClaims)
-			origin_emp := claims[middleware.IdentityKey].(map[string]interface{})
-			emp_id := origin_emp["id"].(float64)
-			empL.CreateUser, empL.UpdateUser = int64(emp_id), int64(emp_id)
-		}
+		emp_id := middleware.GetJwtPayload(c)
+		empL.CreateUser, empL.UpdateUser = emp_id, emp_id
 		log.Printf("新增用户:{%s}", empL.Username)
 		flag := service.SaveEmp(&empL)
 		if flag == true {
@@ -62,4 +56,18 @@ func PageEmp(ctx context.Context, c *app.RequestContext) {
 
 		c.JSON(http.StatusOK, common.Result{1, "", service.PageQueryEmp(&page)})
 	}
+}
+
+// 禁用员工账号
+// @Summary 禁用员工账号
+// @Accept application/json
+// @Produce application/json
+// @router /admin/employee/status [post]
+func StartOrStopEmp(ctx context.Context, c *app.RequestContext) {
+	status, id := c.Param("status"), c.Query("id")
+	log.Printf("启用禁用员工账号：{%s},{%s}", status, id)
+	status_r, _ := strconv.ParseInt(status, 10, 32)
+	id_r, _ := strconv.ParseInt(id, 10, 64)
+	service.StartOrStopEmp(int32(status_r), id_r, middleware.GetJwtPayload(c))
+	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
