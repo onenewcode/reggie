@@ -14,7 +14,7 @@ type Employee struct {
 	Password   string    `gorm:"column:password;not null;comment:密码" json:"password"`                 // 密码
 	Phone      string    `gorm:"column:phone;not null;comment:手机号" json:"phone"`                      // 手机号
 	Sex        string    `gorm:"column:sex;not null;comment:性别" json:"sex"`                           // 性别
-	IDNumber   string    `gorm:"column:id_number;not null;comment:身份证号" json:"id_number"`             // 身份证号
+	IDNumber   string    `gorm:"column:id_number;not null;comment:身份证号" json:"idNumber"`              // 身份证号
 	Status     int32     `gorm:"column:status;not null;default:1;comment:状态 0:禁用，1:启用" json:"status"` // 状态 0:禁用，1:启用
 	CreateTime time.Time `gorm:"column:create_time;comment:创建时间" json:"create_time"`                  // 创建时间
 	UpdateTime time.Time `gorm:"column:update_time;comment:更新时间" json:"update_time"`                  // 更新时间

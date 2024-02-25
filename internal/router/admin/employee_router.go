@@ -71,3 +71,29 @@ func StartOrStopEmp(ctx context.Context, c *app.RequestContext) {
 	service.StartOrStopEmp(int32(status_r), id_r, middleware.GetJwtPayload(c))
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
+
+// 根据id查找雇员
+// @Summary 根据id查找雇员
+// @Accept application/json
+// @Produce application/json
+// @router /admin/employee/status [get]
+func GetByIdEmp(ctx context.Context, c *app.RequestContext) {
+	id := c.Param("id")
+	log.Printf("查询员工账号：{%s}", id)
+	id_r, _ := strconv.ParseInt(id, 10, 64)
+	emp := service.GetByIdEmp(id_r)
+	c.JSON(http.StatusOK, common.Result{1, "", emp})
+}
+
+// 更新雇员信息
+// @Summary 根据id更新雇员信息
+// @Accept application/json
+// @Produce application/json
+// @router /admin/employee [put]
+func UpdateEmp(ctx context.Context, c *app.RequestContext) {
+	var emp model.Employee
+	c.BindAndValidate(&emp)
+	log.Println("编辑员工信息：", emp)
+	service.UpdateEmp(&emp)
+	c.JSON(http.StatusOK, common.Result{1, "", nil})
+}

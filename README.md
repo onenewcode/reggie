@@ -170,33 +170,30 @@ Result类主要是为了包装返回值，让我们的返回值有一个通用�
 然后在model文件夹下创建employee.go文件，然后在文件里添加以下内容。
 >internal/models/model/employee.go
 ```go
-package model
-
 import (
-	"time"
+"time"
 )
 
 const TableNameEmployee = "employee"
 
 // Employee 员工信息
 type Employee struct {
-	ID         int64     `gorm:"column:id;primaryKey;autoIncrement:true;comment:主键" json:"id"`        // 主键
-	Name       string    `gorm:"column:name;not null;comment:姓名" json:"name"`                         // 姓名
-	Username   string    `gorm:"column:username;not null;comment:用户名" json:"username"`                // 用户名
-	Password   string    `gorm:"column:password;not null;comment:密码" json:"password"`                 // 密码
-	Phone      string    `gorm:"column:phone;not null;comment:手机号" json:"phone"`                      // 手机号
-	Sex        string    `gorm:"column:sex;not null;comment:性别" json:"sex"`                           // 性别
-	IDNumber   string    `gorm:"column:id_number;not null;comment:身份证号" json:"id_number"`             // 身份证号
-	Status     int32     `gorm:"column:status;not null;default:1;comment:状态 0:禁用，1:启用" json:"status"` // 状态 0:禁用，1:启用
-	CreateTime time.Time `gorm:"column:create_time;comment:创建时间" json:"create_time"`                  // 创建时间
-	UpdateTime time.Time `gorm:"column:update_time;comment:更新时间" json:"update_time"`                  // 更新时间
-	CreateUser int64     `gorm:"column:create_user;comment:创建人" json:"create_user"`                   // 创建人
-	UpdateUser int64     `gorm:"column:update_user;comment:修改人" json:"update_user"`                   // 修改人
+ID         int64     `gorm:"column:id;primaryKey;autoIncrement:true;comment:主键" json:"id"`        // 主键
+Name       string    `gorm:"column:name;not null;comment:姓名" json:"name"`                         // 姓名
+Username   string    `gorm:"column:username;not null;comment:用户名" json:"username"`                // 用户名
+Password   string    `gorm:"column:password;not null;comment:密码" json:"password"`                 // 密码
+Phone      string    `gorm:"column:phone;not null;comment:手机号" json:"phone"`                      // 手机号
+Sex        string    `gorm:"column:sex;not null;comment:性别" json:"sex"`                           // 性别
+IDNumber   string    `gorm:"column:id_number;not null;comment:身份证号" json:"idNumber"`              // 身份证号
+Status     int32     `gorm:"column:status;not null;default:1;comment:状态 0:禁用，1:启用" json:"status"` // 状态 0:禁用，1:启用
+CreateTime time.Time `gorm:"column:create_time;comment:创建时间" json:"create_time"`                  // 创建时间
+UpdateTime time.Time `gorm:"column:update_time;comment:更新时间" json:"update_time"`                  // 更新时间
+CreateUser int64     `gorm:"column:create_user;comment:创建人" json:"create_user"`                   // 创建人
+UpdateUser int64     `gorm:"column:update_user;comment:修改人" json:"update_user"`                   // 修改人
 }
 
 // TableName Employee's table name
 func (*Employee) TableName() string {
-	return TableNameEmployee
 }
 
 ```
@@ -1468,25 +1465,195 @@ DBEngine.Select("status", "update_time", "update_user").Updates(emp)
 #### 接口文档测试
 打开apifox 访问我们的地址 http://localhost:8080/admin/employee/status/0
 然后我们在Params中添加参数,同时在herder中添加我们的jwt令牌
-![](images/img_17.png)
+![img](images/img_17.png)
 
 **测试前:** 查询employee表中员工账号状态
-![](images/img_18.png)
+![img](images/img_18.png)
 
 **开始测试**
-![](images/img_19.png)
+![img](images/img_19.png)
 
 
 **测试完毕后**，再次查询员工账号状态
-![](images/img_20.png)
+![img](images/img_20.png)
 
 #### 前后端联调测试
 
 **测试前：**
-![](images/img_21.png)
+![img](images/img_21.png)
 
 **点击启用:**
-![](images/img_22.png)
+![img](images/img_22.png)
+
+
+##  编辑员工
+
+###  需求分析与设计
+
+#### 产品原型
+
+在员工管理列表页面点击 "编辑" 按钮，跳转到编辑页面，在编辑页面回显员工信息并进行修改，最后点击 "保存" 按钮完成编辑操作。
+
+**员工列表原型：**
+
+![img](images/img_23.png)
+
+**修改页面原型**：
+
+注：点击修改时，数据应该正常回显到修改页面。
+
+![img](images/img_24.png)
+
+
+####  接口设计
+
+根据上述原型图分析，编辑员工功能涉及到两个接口：
+
+- 根据id查询员工信息
+- 编辑员工信息
+
+**1). 根据id查询员工信息**
+
+![img](images/img_25.png)
+
+
+**2). 编辑员工信息**
+![img](images/img_25.png)
+
+**注:因为是修改功能，请求方式可设置为PUT。**
+
+
+
+###  代码开发
+####  回显员工信息功能
+**1). 添加路由**
+在我们的根路由其中添加关于按照用户id查询用户信息
+>internal/router/router.go
+```go
+// 查询雇员接口
+		emp.GET("/:id", admin.GetByIdEmp)
+```
+**2). router逻辑添加**
+在 employee_router.go 中创建 GetByIdEmp 方法：
+>internal/router/admin/employee_router.go
+```go
+// 根据id查找雇员
+// @Summary 根据id查找雇员
+// @Accept application/json
+// @Produce application/json
+// @router /admin/employee/status [get]
+func GetByIdEmp(ctx context.Context, c *app.RequestContext) {
+	// 首先从请求url获取id
+	id := c.Param("id")
+	log.Printf("查询员工账号：{%s}", id)
+	id_r, _ := strconv.ParseInt(id, 10, 64)
+	emp := service.GetByIdEmp(id_r)
+	c.JSON(http.StatusOK, common.Result{1, "", emp})
+}
+```
+**3). 添加service逻辑**
+我们需要在我们的employee_service.go添加相应功能。
+>internal/router/service/employee_service.go
+```go
+func GetByIdEmp(id int64) *model.Employee {
+	return db.EmpDao.GetById(id)
+}
+
+```
+**4). dao层**
+
+在 employee_dao.go文件中实现 GetById 方法：
+
+```go
+func (*EmployeeDao) GetById(id int64) *model.Employee {
+	var emp model.Employee
+	DBEngine.Where("id=?", id).First(&emp)
+	return &emp
+}
+```
+
+#### 修改员工信息功能
+
+**1). 添加路由**
+在我们的根路由其中添加关于按照用户id查询用户信息
+>internal/router/router.go
+```go
+	// 添加修改雇员接口
+emp.PUT("", admin.UpdateEmp)
+```
+**2). router逻辑添加**
+在 employee_router.go 中创建 GetByIdEmp 方法：
+>internal/router/admin/employee_router.go
+```go
+// 更新雇员信息
+// @Summary 根据id更新雇员信息
+// @Accept application/json
+// @Produce application/json
+// @router /admin/employee [put]
+func UpdateEmp(ctx context.Context, c *app.RequestContext) {
+var emp model.Employee
+c.BindAndValidate(&emp)
+log.Println("编辑员工信息：", emp)
+service.UpdateEmp(&emp)
+c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+
+```
+**3). 添加service逻辑**
+我们需要在我们的employee_service.go添加相应功能。
+>internal/router/service/employee_service.go
+```go
+func UpdateEmp(emp *model.Employee) {
+db.EmpDao.Update(emp)
+}
+```
+**4). dao层**
+
+在 employee_dao.go文件中实现 Update 方法：
+
+```go
+func (*EmployeeDao) Update(emp *model.Employee) {
+DBEngine.Updates(emp)
+}
+```
+
+### 功能测试
+
+#### 接口文档测试
+
+分别测试**根据id查询员工信息**和**编辑员工信息**两个接口
+
+**1). 根据id查询员工信息**
+
+查询employee表中的数据，以id=的记录为例 我们在api 工具访问以下地址，记得加上jwt令牌
+
+![image](images/img_27.png)
+
+开始测试
+![image](images/img_28.png)
+获取到了id=4的相关员工信息
+![image](images/img_29.png)
+**2). 编辑员工信息**
+
+修改id=4的员工信息，**name**由**小智**改为**zhangsan**，**username**改为**zhangsan**。
+![image](images/img_30.png)
+
+查看employee表数据
+
+![image](images/img_31.png)
+
+
+
+#### 前后端联调测试
+
+进入到员工列表查询
+![image](images/img_33.png)
+
+对员工姓名为rdesfdf的员工数据修改，点击修改，数据已回显
+![image](images/img_32.png)
+
+修改名称为xiaozhi，点击保存，就会数据回显
+![image](images/img_34.png)
 
 
 

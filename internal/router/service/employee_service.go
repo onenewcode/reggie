@@ -46,3 +46,11 @@ func StartOrStopEmp(status int32, id int64, update_user int64) {
 	}
 	db.EmpDao.UpdateStatus(&emp)
 }
+
+func GetByIdEmp(id int64) *model.Employee {
+	return db.EmpDao.GetById(id)
+}
+
+func UpdateEmp(emp *model.Employee) {
+	db.EmpDao.Update(emp)
+}

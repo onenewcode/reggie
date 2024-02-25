@@ -1,7 +1,6 @@
 package db
 
 import (
-	"log"
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 )
@@ -32,6 +31,13 @@ func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) *[]model.Employee 
 }
 
 func (*EmployeeDao) UpdateStatus(emp *model.Employee) {
-	log.Println(*emp)
 	DBEngine.Select("status", "update_time", "update_user").Updates(emp)
+}
+func (*EmployeeDao) GetById(id int64) *model.Employee {
+	var emp model.Employee
+	DBEngine.Where("id=?", id).First(&emp)
+	return &emp
+}
+func (*EmployeeDao) Update(emp *model.Employee) {
+	DBEngine.Updates(emp)
 }

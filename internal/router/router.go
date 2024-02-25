@@ -31,6 +31,10 @@ func InitRouter(r *server.Hertz) {
 		emp.POST("/logout", myJwt.LogoutHandler)
 		// 添加雇员接口
 		emp.POST("", admin.SaveEmp)
+		// 添加修改雇员接口
+		emp.PUT("", admin.UpdateEmp)
+		// 查询雇员接口
+		emp.GET("/:id", admin.GetByIdEmp)
 		// 禁用员工账号
 		emp.POST("/status/*status", admin.StartOrStopEmp)
 		emp.GET("/page", admin.PageEmp)
