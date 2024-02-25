@@ -47,6 +47,8 @@ func InitRouter(r *server.Hertz) {
 	{
 		// 新增菜品路由
 		category.POST("", admin.SaveCategory)
+		// 菜品分类分页
+		category.GET("/page", admin.PageCat)
 	}
 
 }

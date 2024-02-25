@@ -17,17 +17,19 @@ func (*EmployeeDao) Insert(emp *model.Employee) {
 	DBEngine.Create(emp)
 }
 
-func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) *[]model.Employee {
-	var users []model.Employee
-	origin_sql := DBEngine.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc")
+func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) (*[]model.Employee, int64) {
+	var (
+		users []model.Employee
+		count int64
+	)
+	origin_sql := DBEngine
 	// 判断是否含有name，有name不为nil，就进行模糊查询。
-	if page.Name == nil {
-		origin_sql.Find(&users)
-		return &users
-	} else {
-		origin_sql.Where("name LIKE ?", "%"+*page.Name+"%").Find(&users)
-		return &users
+	if page.Name != nil {
+		origin_sql = origin_sql.Where("name LIKE ?", "%"+*page.Name+"%").Find(&users)
 	}
+	origin_sql.Model(&model.Employee{}).Count(&count)
+	origin_sql.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc").Find(&users)
+	return &users, count
 }
 
 func (*EmployeeDao) UpdateStatus(emp *model.Employee) {

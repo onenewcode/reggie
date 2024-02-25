@@ -18,7 +18,6 @@ func (r Result) Error() string {
 }
 
 type PageResult struct {
-	Total   int         `json:"total,omitempty"`   //总记录数
+	Total   int64       `json:"total,omitempty"`   //总记录数
 	Records interface{} `json:"records,omitempty"` //当前页数据集合
-
 }

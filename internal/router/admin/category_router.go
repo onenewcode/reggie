@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reggie/internal/middleware"
 	"reggie/internal/models/common"
+	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 	"reggie/internal/router/service"
 	"time"
@@ -27,4 +28,18 @@ func SaveCategory(ctx context.Context, c *app.RequestContext) {
 	log.Println("新增分类：", category)
 	service.SaveCategory(&category)
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+
+// 菜品分类分页
+// @Summary 新增菜品
+// @Accept application/json
+// @Produce application/json
+// @router /admin/category/page [get]
+func PageCat(ctx context.Context, c *app.RequestContext) {
+	var categoryPage dto.CategoryPageQueryDTO
+	c.Bind(&categoryPage)
+	log.Println("菜品分类查询", categoryPage)
+	cat := service.PageQueryDat(&categoryPage)
+	c.JSON(http.StatusOK, common.Result{1, "", cat})
+
 }

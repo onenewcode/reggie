@@ -1189,9 +1189,8 @@ PageSize int `json:"pageSize,omitempty" form:"pageSize,omitempty"`
 ```go
 
 type PageResult struct {
-	Total   int64      `json:"total,omitempty"`   //总记录数
-	Records *list.List `json:"records,omitempty"` //当前页数据集合
-
+Total   int64       `json:"total,omitempty"`   //总记录数
+Records interface{} `json:"records,omitempty"` //当前页数据集合
 }
 
 ```
@@ -1223,7 +1222,6 @@ func (r Result) Error() string {
 ```
 #### router层
 
-在sky-server模块中，com.sky.controller.admin.EmployeeController中添加分页查询方法。
 我们需要在router层添加分页查询方法。
 >internal/router/admin/employee_router.go
 ```go
@@ -1248,7 +1246,18 @@ func PageEmp(ctx context.Context, c *app.RequestContext) {
 
 ```
 
+#### service
+我们也需要在service添加一定的逻辑进行数据处理,并返回一个分页查询的结果。
+>internal/router/admin/employee_service.go
+```go
+func PageQueryEmp(page *dto.EmployeePageQueryDTO) *common.PageResult {
+	var pageResult = common.PageResult{}
 
+	pageResult.Records, pageResult.Total = db.EmpDao.PageQuery(page)
+
+	return &pageResult
+}
+```
 
 
 ####  dao层
@@ -1257,17 +1266,19 @@ func PageEmp(ctx context.Context, c *app.RequestContext) {
 值得注意的是我们还需要通过name判断是否进行模糊查询。
 
 ```go
-func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) *[]model.Employee {
-	var users []model.Employee
-	origin_sql := DBEngine.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc")
-	// 判断是否含有name，有name不为nil，就进行模糊查询。
-	if page.Name == nil {
-		origin_sql.Find(&users)
-		return &users
-	} else {
-		origin_sql.Where("name LIKE ?", "%"+*page.Name+"%").Find(&users)
-		return &users
-	}
+func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) (*[]model.Employee, int64) {
+var (
+users []model.Employee
+count int64
+)
+origin_sql := DBEngine
+// 判断是否含有name，有name不为nil，就进行模糊查询。
+if page.Name != nil {
+origin_sql = origin_sql.Where("name LIKE ?", "%"+*page.Name+"%").Find(&users)
+}
+origin_sql.Model(&model.Employee{}).Count(&count)
+origin_sql.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc").Find(&users)
+return &users, count
 }
 ```
 
@@ -1846,7 +1857,7 @@ category.POST("", admin.SaveCategory)
 ```
 **2). router逻辑添加**
 在 category_router.go 中创建 SaveCategory 方法：
->internal/router/admin/employee_router.go
+>internal/router/admin/category_router.go
 ```go
 // 新增菜品
 // @Summary 新增菜品
@@ -1868,7 +1879,7 @@ c.JSON(http.StatusOK, common.Result{1, "", nil})
 ```
 **3). 添加service逻辑**
 我们需要在我们的category_service.go添加相应功能。
->internal/router/service/employee_service.go
+>internal/router/service/category_service.go
 ```go
 func SaveCategory(category *model.Category) {
 db.CatDao.Save(category)
@@ -1915,6 +1926,122 @@ DBEngine.Create(category)
 #### 前后端联调测试
 前后端联调启动有问题，具体解决方式可以参考，[这里的问题二](#代码存在的问题)
 
+## 分类分页查询
+接口详情
+![image](images/img_37.png) 
+
+###  代码开发
+####  菜品分类分页
+**1). 添加路由**
+在我们的根路由其中添加新增菜品的路由
+>internal/router/router.go
+```go
+// 菜品分类分页
+category.GET("/page", admin.PageCat)
+```
+**2). router逻辑添加**
+在 category_router.go 中创建 PageCat 方法：
+>internal/router/admin/category_router.go
+```go
+// 菜品分类分页
+// @Summary 新增菜品
+// @Accept application/json
+// @Produce application/json
+// @router /admin/category/page [get]
+func PageCat(ctx context.Context, c *app.RequestContext) {
+var categoryPage dto.CategoryPageQueryDTO
+c.Bind(&categoryPage)
+log.Println("菜品分类查询", categoryPage)
+cat := service.PageQueryDat(&categoryPage)
+c.JSON(http.StatusOK, common.Result{1, "", cat})
+
+}
+
+```
+**3). 添加service逻辑**
+我们需要在我们的category_service.go添加相应功能。
+>internal/router/service/category_service.go
+```go
+func PageQueryDat(categoryPage *dto.CategoryPageQueryDTO) *common.PageResult {
+var pageResult = common.PageResult{}
+pageResult.Records, pageResult.Total = db.CatDao.PageQuery(categoryPage)
+return &pageResult
+}
+
+```
+**4). dao层**
+
+在 category_dao.go文件中实现 PageQuery 方法：
+>internal/db/category_dao.go
+```go
+func (*CategoryDao) PageQuery(page *dto.CategoryPageQueryDTO) (*[]model.Category, int64) {
+var (
+cat   []model.Category
+count int64
+)
+origin_sql := DBEngine
+// 判断是否含有name，有name不为nil，就进行模糊查询。
+if page.Name != nil {
+origin_sql = origin_sql.Where("name LIKE ?", "%"+*page.Name+"%")
+}
+if page.Type != nil {
+origin_sql = origin_sql.Where("type=?", page.Type)
+}
+origin_sql.Model(&model.Category{}).Count(&count)
+origin_sql.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc").Find(&cat)
+return &cat, count
+}
+```
+
+### 功能测试
+
+#### 接口文档测试
+
+测试**添加菜品分类分页查询功能**
+
+我们再api工具在 访问 http://localhost:8080/admin/category/page/?page=1&pageSize=10&type=2 添加jwt令牌。
+![image](images/img_47.png)
+运行程序进行测试。
+调试结果
+```shell
+{
+    "code": 1,
+    "msg": "",
+    "data": {
+        "total": 2,
+        "records": [
+            {
+                "id": 15,
+                "type": 2,
+                "name": "商务套餐",
+                "sort": 13,
+                "status": 1,
+                "create_time": "2022-06-09T22:14:10+08:00",
+                "update_time": "2022-06-10T11:04:48+08:00",
+                "create_user": 1,
+                "update_user": 1
+            },
+            {
+                "id": 13,
+                "type": 2,
+                "name": "人气套餐",
+                "sort": 12,
+                "status": 1,
+                "create_time": "2022-06-09T22:11:38+08:00",
+                "update_time": "2022-06-10T11:04:40+08:00",
+                "create_user": 1,
+                "update_user": 1
+            }
+        ]
+    }
+}
+```
+
+
+
+#### 前后端联调测试
+登陆，然后点击分类管理，效果如下。
+![image](images/img_48.png)
 
 <a name="代码存在的问题"></a>
 # 代码存在的问题

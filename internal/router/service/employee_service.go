@@ -31,8 +31,8 @@ func SaveEmp(emp *model.Employee) bool {
 }
 func PageQueryEmp(page *dto.EmployeePageQueryDTO) *common.PageResult {
 	var pageResult = common.PageResult{}
-	tmp := db.EmpDao.PageQuery(page)
-	pageResult.Records, pageResult.Total = tmp, len(*tmp)
+
+	pageResult.Records, pageResult.Total = db.EmpDao.PageQuery(page)
 
 	return &pageResult
 }
