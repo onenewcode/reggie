@@ -12,6 +12,7 @@ import (
 	"reggie/internal/models/model"
 	"reggie/internal/router/service"
 	"strconv"
+	"time"
 )
 
 // 存储用户
@@ -93,6 +94,7 @@ func GetByIdEmp(ctx context.Context, c *app.RequestContext) {
 func UpdateEmp(ctx context.Context, c *app.RequestContext) {
 	var emp model.Employee
 	c.BindAndValidate(&emp)
+	emp.UpdateUser, emp.UpdateTime = middleware.GetJwtPayload(c), time.Now()
 	log.Println("编辑员工信息：", emp)
 	service.UpdateEmp(&emp)
 	c.JSON(http.StatusOK, common.Result{1, "", nil})

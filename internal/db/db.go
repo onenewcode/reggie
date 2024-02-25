@@ -13,6 +13,7 @@ import (
 var (
 	DBEngine *gorm.DB
 	EmpDao   = EmployeeDao{}
+	CatDao   = CategoryDao{}
 )
 
 func InitDB() {

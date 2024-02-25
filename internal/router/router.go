@@ -42,7 +42,11 @@ func InitRouter(r *server.Hertz) {
 		emp.GET("/test", func(c context.Context, ctx *app.RequestContext) {
 			ctx.String(http.StatusOK, "Fds")
 		})
-
+	}
+	category := adm.Group("/category")
+	{
+		// 新增菜品路由
+		category.POST("", admin.SaveCategory)
 	}
 
 }

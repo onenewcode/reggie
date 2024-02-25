@@ -1563,7 +1563,7 @@ func GetByIdEmp(id int64) *model.Employee {
 **4). dao层**
 
 在 employee_dao.go文件中实现 GetById 方法：
-
+>internal/db/employee_dao.go
 ```go
 func (*EmployeeDao) GetById(id int64) *model.Employee {
 	var emp model.Employee
@@ -1593,6 +1593,7 @@ emp.PUT("", admin.UpdateEmp)
 func UpdateEmp(ctx context.Context, c *app.RequestContext) {
 var emp model.Employee
 c.BindAndValidate(&emp)
+emp.UpdateUser,emp.UpdateTime=middleware.GetJwtPayload(c),time.Now()
 log.Println("编辑员工信息：", emp)
 service.UpdateEmp(&emp)
 c.JSON(http.StatusOK, common.Result{1, "", nil})
@@ -1608,9 +1609,8 @@ db.EmpDao.Update(emp)
 }
 ```
 **4). dao层**
-
 在 employee_dao.go文件中实现 Update 方法：
-
+>internal/db/employee_dao.go
 ```go
 func (*EmployeeDao) Update(emp *model.Employee) {
 DBEngine.Updates(emp)
@@ -1655,7 +1655,299 @@ DBEngine.Updates(emp)
 修改名称为xiaozhi，点击保存，就会数据回显
 ![image](images/img_34.png)
 
+## 总结
+目前为止项目的结构。
+```shell
+│  go.mod
+│  go.sum
+│  main.go #程序入口
+│  README.md
+│      
+├─docs # swagger 文档
+├─images # README文档中的图片
+├─internal
+│  ├─config
+│  │      config.go
+│  │      config.yaml
+│  │      
+│  ├─db # dao层
+│  │      db.go
+│  │      employee_dao.go
+│  │      
+│  ├─middleware # 中间件
+│  │      jwt.go
+│  │      swagger.go
+│  │      
+│  ├─models #存储各种类
+│  │  ├─common
+│  │  │      common.go
+│  │  │      
+│  │  ├─constant # 定义常量
+│  │  │  ├─message_c
+│  │  │  │      common.go
+│  │  │  │      
+│  │  │  └─status_c
+│  │  │          common.go
+│  │  │          
+│  │  ├─dto # 传输类
+│  │  │      common.go
+│  │  │      
+│  │  ├─model #实体类
+│  │  │      
+│  │  └─vo
+│  │          common.go
+│  │          
+│  ├─router 
+│  │  │  router.go
+│  │  │  
+│  │  ├─admin #router
+│  │  │      employee_router.go
+│  │  │      
+│  │  └─service #service
+│  │          employee_service.go
+│  │          
+│  └─utils
+│          gen.go
+│          
+├─nginx-1.20.2 #前端
+├─sql  #数据库文件
+│      sky.sql
+│      
+└─templates
+     
+```
+
+#  第四章 完善菜品功能
+
+## 需求分析与设计
+
+### 产品原型
+
+后台系统中可以管理分类信息，分类包括两种类型，分别是 **菜品分类** 和 **套餐分类** 。
+
+先来分析**菜品分类**相关功能。
+
+**新增菜品分类:** 当我们在后台系统中添加菜品时需要选择一个菜品分类，在移动端也会按照菜品分类来展示对应的菜品。
+
+**菜品分类分页查询:** 系统中的分类很多的时候，如果在一个页面中全部展示出来会显得比较乱，不便于查看，所以一般的系统中都会以分页的方式来展示列表数据。
+
+**根据id删除菜品分类:** 在分类管理列表页面，可以对某个分类进行删除操作。需要注意的是当分类关联了菜品或者套餐时，此分类不允许删除。
+
+**修改菜品分类:** 在分类管理列表页面点击修改按钮，弹出修改窗口，在修改窗口回显分类信息并进行修改，最后点击确定按钮完成修改操作。
+
+**启用禁用菜品分类:** 在分类管理列表页面，可以对某个分类进行启用或者禁用操作。
+
+**分类类型查询:** 当点击分类类型下拉框时，从数据库中查询所有的菜品分类数据进行展示。
 
 
 
+**分类管理原型:**
 
+![image](images/img_35.png)
+
+**业务规则：**
+
+- 分类名称必须是唯一的
+- 分类按照类型可以分为菜品分类和套餐分类
+- 新添加的分类状态默认为“禁用”
+
+
+
+###  接口设计
+
+根据上述原型图分析，菜品分类模块共涉及6个接口。
+
+- 新增分类
+- 分类分页查询
+- 根据id删除分类
+- 修改分类
+- 启用禁用分类
+- 根据类型查询分类
+
+接下来，详细地分析每个接口。
+
+
+**1). 新增分类**
+![image](images/img_36.png)
+
+**2). 分类分页查询**
+![image](images/img_37.png)
+**3). 根据id删除分类**
+![image](images/img_38.png)
+**4). 修改分类**
+![image](images/img_39.png)
+**5). 启用禁用分类**
+![image](images/img_40.png)
+**6). 根据类型查询分类**
+![image](images/img_41.png)
+### 表设计
+
+**category表结构:**
+
+| **字段名**  | **数据类型** | **说明**     | **备注**            |
+| ----------- | ------------ | ------------ | ------------------- |
+| id          | bigint       | 主键         | 自增                |
+| name        | varchar(32)  | 分类名称     | 唯一                |
+| type        | int          | 分类类型     | 1菜品分类 2套餐分类 |
+| sort        | int          | 排序字段     | 用于分类数据的排序  |
+| status      | int          | 状态         | 1启用 0禁用         |
+| create_time | datetime     | 创建时间     |                     |
+| update_time | datetime     | 最后修改时间 |                     |
+| create_user | bigint       | 创建人id     |                     |
+| update_user | bigint       | 最后修改人id |                     |
+
+同时我们要在model文件夹下新建category.go文件，并且在该文件下添加以下内容。
+>internal/models/model/category.go
+```go
+package model
+
+import (
+	"time"
+)
+
+const TableNameCategory = "category"
+
+// Category 菜品及套餐分类
+type Category struct {
+	ID         int64     `gorm:"column:id;primaryKey;autoIncrement:true;comment:主键" json:"id"` // 主键
+	Type       int32     `gorm:"column:type;comment:类型   1 菜品分类 2 套餐分类" json:"type"`           // 类型   1 菜品分类 2 套餐分类
+	Name       string    `gorm:"column:name;not null;comment:分类名称" json:"name"`                // 分类名称
+	Sort       int32     `gorm:"column:sort;not null;comment:顺序" json:"sort"`                  // 顺序
+	Status     int32     `gorm:"column:status;comment:分类状态 0:禁用，1:启用" json:"status"`           // 分类状态 0:禁用，1:启用
+	CreateTime time.Time `gorm:"column:create_time;comment:创建时间" json:"create_time"`           // 创建时间
+	UpdateTime time.Time `gorm:"column:update_time;comment:更新时间" json:"update_time"`           // 更新时间
+	CreateUser int64     `gorm:"column:create_user;comment:创建人" json:"create_user"`            // 创建人
+	UpdateUser int64     `gorm:"column:update_user;comment:修改人" json:"update_user"`            // 修改人
+}
+
+// TableName Category's table name
+func (*Category) TableName() string {
+	return TableNameCategory
+}
+
+```
+ 
+
+## 新增分类
+接口详情
+![image](images/img_36.png)
+
+###  代码开发
+####  回显员工信息功能
+**1). 添加路由**
+在我们的根路由其中添加新增菜品的路由
+>internal/router/router.go
+```go
+category := adm.Group("/category")
+{
+// 新增菜品路由
+category.POST("", admin.SaveCategory)
+}
+```
+**2). router逻辑添加**
+在 category_router.go 中创建 SaveCategory 方法：
+>internal/router/admin/employee_router.go
+```go
+// 新增菜品
+// @Summary 新增菜品
+// @Accept application/json
+// @Produce application/json
+// @router /admin/category [post]
+func SaveCategory(ctx context.Context, c *app.RequestContext) {
+var category model.Category
+c.Bind(&category)
+// 赋予创建用户和更新用户的数据
+category.CreateUser, category.UpdateUser = middleware.GetJwtPayload(c), middleware.GetJwtPayload(c)
+// 赋予创建时间和更新时间数据
+category.CreateTime, category.UpdateTime = time.Now(), time.Now()
+log.Println("新增分类：", category)
+service.SaveCategory(&category)
+c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+
+```
+**3). 添加service逻辑**
+我们需要在我们的category_service.go添加相应功能。
+>internal/router/service/employee_service.go
+```go
+func SaveCategory(category *model.Category) {
+db.CatDao.Save(category)
+}
+```
+**4). dao层**
+
+在 category_dao.go文件中实现 Save 方法：
+>internal/db/category_dao.go
+```go
+func (*CategoryDao) Save(category *model.Category) {
+DBEngine.Create(category)
+}
+```
+
+### 功能测试
+
+#### 接口文档测试
+
+测试**添加菜品分类功能**
+
+
+**添加菜品分类功能**
+查看category表数据
+![image](images/img_44.png)
+
+我们再api工具在 访问 http://localhost:8080/admin/category 添加jwt令牌，同时在body添加以下内容。
+```json
+{
+  "name": "十分感动",
+  "type": 1,
+  "sort": 3
+}
+```
+![image](images/img_45.png)
+运行程序进行测试。
+
+查看employee表数据
+
+![image](images/img_46.png)
+
+
+
+#### 前后端联调测试
+前后端联调启动有问题，具体解决方式可以参考，[这里的问题二](#代码存在的问题)
+
+
+<a name="代码存在的问题"></a>
+# 代码存在的问题
+## 问题一 日期无法正常显示
+**示例** 管理员工的界面。
+![image](images/img_42.png)
+### 解决方法
+#### 添加vo视图
+我们可以新建一个EmployeeVO视图,将日期格式化成字符串之后在返回给前端。
+#### 更改前端
+我们需要更改前端的的处理日期的逻辑
+## 问题二 菜品种类和套餐种类无法添加
+下图两个功能无法使用，具体原因是因为json返回的格式问题。
+![image](images/img_43.png)
+
+样例发出的json，其中type和sort都是字符串
+```json
+{
+  "name": "十分感动",
+  "type": "1",
+  "sort": "3"
+}
+```
+我们需要的json，其中type和sort都是数字
+```json
+{
+  "name": "十分感动",
+  "type": 1,
+  "sort": 3
+}
+```
+### 解决方法
+#### 添加vo视图（不推荐）
+我们可以新建一个视图,让视图能够接受字符串类型，之后我们再转换成int类型赋值给需要插入的类，但是不建议这么做，因为go的类型转换还是有点繁琐，建议还是改前端。
+#### 更改前端
+我们需要更改前端的发出json的逻辑
