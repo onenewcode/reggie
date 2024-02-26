@@ -50,7 +50,7 @@ func PageCat(ctx context.Context, c *app.RequestContext) {
 // @Produce application/json
 // @router /admin/category [delete]
 func DeleteCat(ctx context.Context, c *app.RequestContext) {
-	id := c.Param("id")
+	id := c.Query("id")
 	log.Printf("查询员工账号：{%s}", id)
 	id_r, _ := strconv.ParseInt(id, 10, 64)
 	if err := service.DeleteCat(&id_r); err != nil {

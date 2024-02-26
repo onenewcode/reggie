@@ -2061,16 +2061,15 @@ return &cat, count
 // @Produce application/json
 // @router /admin/category [delete]
 func DeleteCat(ctx context.Context, c *app.RequestContext) {
-id := c.Param("id")
+id := c.Query("id")
 log.Printf("查询员工账号：{%s}", id)
 id_r, _ := strconv.ParseInt(id, 10, 64)
-if err:=service.DeleteCat(&id_r);err != nil {
+if err := service.DeleteCat(&id_r); err != nil {
 log.Println(err)
-c.JSON(http.StatusOK,common.Result{0,"",nil})
-}else {
-c.JSON(http.StatusOK,common.Result{1,"",nil})
+c.JSON(http.StatusOK, common.Result{0, "", nil})
+} else {
+c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
-
 }
 
 ```
@@ -2104,52 +2103,23 @@ return nil
 
 #### 接口文档测试
 
-测试**添加菜品分类分页查询功能**
+测试**按照id删除菜品分类功能**
+首先查看我们的的表格
+![image](images/img_49.png)
 
 我们再api工具在 访问 http://localhost:8080/admin/category/page/?page=1&pageSize=10&type=2 添加jwt令牌。
-![image](images/img_47.png)
+![image](images/img_50.png)
+
 运行程序进行测试。
 调试结果
-```shell
-{
-    "code": 1,
-    "msg": "",
-    "data": {
-        "total": 2,
-        "records": [
-            {
-                "id": 15,
-                "type": 2,
-                "name": "商务套餐",
-                "sort": 13,
-                "status": 1,
-                "create_time": "2022-06-09T22:14:10+08:00",
-                "update_time": "2022-06-10T11:04:48+08:00",
-                "create_user": 1,
-                "update_user": 1
-            },
-            {
-                "id": 13,
-                "type": 2,
-                "name": "人气套餐",
-                "sort": 12,
-                "status": 1,
-                "create_time": "2022-06-09T22:11:38+08:00",
-                "update_time": "2022-06-10T11:04:40+08:00",
-                "create_user": 1,
-                "update_user": 1
-            }
-        ]
-    }
-}
-```
-
-
+![image](images/img_51.png)
+我们可以看到id为42的信息已被删除。
 
 #### 前后端联调测试
-登陆，然后点击分类管理，效果如下。
-![image](images/img_48.png)
-
+登陆，然后点击分类管理，然后点击删除。
+![image](images/img_52.png)
+可以看到刚才点击删除的条目已经被删除。
+![image](images/img_53.png)
 ## 修改菜品分类信息
 接口信息
 ![image](images/img_39.png)
