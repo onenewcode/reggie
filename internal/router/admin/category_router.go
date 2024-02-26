@@ -10,6 +10,7 @@ import (
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 	"reggie/internal/router/service"
+	"strconv"
 	"time"
 )
 
@@ -41,5 +42,22 @@ func PageCat(ctx context.Context, c *app.RequestContext) {
 	log.Println("菜品分类查询", categoryPage)
 	cat := service.PageQueryDat(&categoryPage)
 	c.JSON(http.StatusOK, common.Result{1, "", cat})
+}
+
+// 按照id删除菜品分类
+// @Summary 新增菜品
+// @Accept application/json
+// @Produce application/json
+// @router /admin/category [delete]
+func DeleteCat(ctx context.Context, c *app.RequestContext) {
+	id := c.Param("id")
+	log.Printf("查询员工账号：{%s}", id)
+	id_r, _ := strconv.ParseInt(id, 10, 64)
+	if err := service.DeleteCat(&id_r); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusOK, common.Result{0, "", nil})
+	} else {
+		c.JSON(http.StatusOK, common.Result{1, "", nil})
+	}
 
 }

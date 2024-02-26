@@ -28,3 +28,10 @@ func (*CategoryDao) PageQuery(page *dto.CategoryPageQueryDTO) (*[]model.Category
 	origin_sql.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc").Find(&cat)
 	return &cat, count
 }
+func (*CategoryDao) Delete(id *int64) *error {
+	err := DBEngine.Delete(&model.Category{}, id).Error
+	if err != nil {
+		return &err
+	}
+	return nil
+}

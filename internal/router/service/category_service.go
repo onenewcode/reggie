@@ -15,3 +15,10 @@ func PageQueryDat(categoryPage *dto.CategoryPageQueryDTO) *common.PageResult {
 	pageResult.Records, pageResult.Total = db.CatDao.PageQuery(categoryPage)
 	return &pageResult
 }
+func DeleteCat(id *int64) *error {
+	err := db.CatDao.Delete(id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
