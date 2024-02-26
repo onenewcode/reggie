@@ -54,7 +54,9 @@ func InitRouter(r *server.Hertz) {
 		// 添加修改菜品分类
 		category.PUT("", admin.UpdateCat)
 		// 启用禁用分类
-		emp.POST("/status/*status", admin.StartOrStopCat)
+		category.POST("/status/*status", admin.StartOrStopCat)
+		// 根据类型查询分类
+		category.GET("/list", admin.ListCat)
 	}
 
 }

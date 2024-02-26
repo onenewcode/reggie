@@ -80,12 +80,25 @@ func UpdateCat(ctx context.Context, c *app.RequestContext) {
 // @Summary 启用禁用菜品分类
 // @Accept application/json
 // @Produce application/json
-// @router /admin/categorystatus [post]
+// @router /admin/category/status [post]
 func StartOrStopCat(ctx context.Context, c *app.RequestContext) {
 	status, id := c.Param("status"), c.Query("id")
-	log.Printf("启用禁用员工账号：{%s},{%s}", status, id)
+	log.Printf("启用禁用菜品分类：{%s},{%s}", status, id)
 	status_r, _ := strconv.ParseInt(status, 10, 32)
 	id_r, _ := strconv.ParseInt(id, 10, 64)
 	service.StartOrStopCat(int32(status_r), id_r, middleware.GetJwtPayload(c))
+	c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+
+// 启用禁用菜品分类
+// @Summary 启用禁用菜品分类
+// @Accept application/json
+// @Produce application/json
+// @router /admin/category/list [get]
+func ListCat(ctx context.Context, c *app.RequestContext) {
+	ty_pe := c.Query("type")
+	log.Printf("启用禁用员工账号：{%s}", ty_pe)
+	tp, _ := strconv.ParseInt(ty_pe, 10, 64)
+	service.ListCat(&tp)
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }

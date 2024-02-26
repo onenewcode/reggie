@@ -35,3 +35,6 @@ func StartOrStopCat(status int32, id int64, update_user int64) {
 	}
 	db.CatDao.UpdateStatus(&cat)
 }
+func ListCat(tp *int64) *[]model.Category {
+	return db.CatDao.List(tp)
+}

@@ -2251,10 +2251,110 @@ DBEngine.Updates(category)
 登陆，然后点击分类管理，效果如下。
 ![image](images/img_48.png)
 
-
 ## 启用禁用分类
 接口信息
-![image](images/img_40.png)
+![image](images/img_41.png)
+###  代码开发
+
+**1). 添加路由**
+在我们的根路由其中添加新增菜品的路由
+>internal/router/router.go
+```go
+	// 根据类型查询分类
+category.GET("/list", admin.ListCat)
+```
+**2). router逻辑添加**
+在 category_router.go 中创建 PageCat 方法：
+>internal/router/admin/category_router.go
+```go
+// 启用禁用菜品分类
+// @Summary 启用禁用菜品分类
+// @Accept application/json
+// @Produce application/json
+// @router /admin/category/list [get]
+func ListCat(ctx context.Context, c *app.RequestContext) {
+ty_pe := c.Query("type")
+log.Printf("启用禁用员工账号：{%s}", ty_pe)
+tp, _ := strconv.ParseInt(ty_pe, 10, 64)
+service.ListCat(&tp)
+c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+```
+**3). 添加service逻辑**
+我们需要在我们的category_service.go添加相应功能。
+>internal/router/service/category_service.go
+```go
+func ListCat(tp *int64) *[]model.Category {
+return db.CatDao.List(tp)
+}
+```
+**4). dao层**
+
+在 category_dao.go文件中实现 List 方法：
+>internal/db/category_dao.go
+```go
+func (*CategoryDao) List(tp *int64) *[]model.Category {
+var cat []model.Category
+DBEngine.Where("type=?", tp).Find(&cat)
+return &cat
+}
+
+```
+
+### 功能测试
+
+#### 接口文档测试
+
+测试**添加菜品分类分页查询功能**
+
+我们再api工具在 访问 http://localhost:8080/admin/category/page/?page=1&pageSize=10&type=2 添加jwt令牌。
+![image](images/img_47.png)
+运行程序进行测试。
+调试结果
+```shell
+{
+    "code": 1,
+    "msg": "",
+    "data": {
+        "total": 2,
+        "records": [
+            {
+                "id": 15,
+                "type": 2,
+                "name": "商务套餐",
+                "sort": 13,
+                "status": 1,
+                "create_time": "2022-06-09T22:14:10+08:00",
+                "update_time": "2022-06-10T11:04:48+08:00",
+                "create_user": 1,
+                "update_user": 1
+            },
+            {
+                "id": 13,
+                "type": 2,
+                "name": "人气套餐",
+                "sort": 12,
+                "status": 1,
+                "create_time": "2022-06-09T22:11:38+08:00",
+                "update_time": "2022-06-10T11:04:40+08:00",
+                "create_user": 1,
+                "update_user": 1
+            }
+        ]
+    }
+}
+```
+
+
+
+#### 前后端联调测试
+登陆，然后点击分类管理，效果如下。
+![image](images/img_48.png)
+
+
+## 根据类型查询分类
+接口信息
+![image](images/img_41.png)
 ###  代码开发
 
 **1). 添加路由**
@@ -2349,8 +2449,6 @@ DBEngine.Select("status", "update_time", "update_user").Updates(cat)
     }
 }
 ```
-
-
 
 #### 前后端联调测试
 登陆，然后点击分类管理，效果如下。

@@ -41,3 +41,8 @@ func (*CategoryDao) Update(category *model.Category) {
 func (*CategoryDao) UpdateStatus(cat *model.Category) {
 	DBEngine.Select("status", "update_time", "update_user").Updates(cat)
 }
+func (*CategoryDao) List(tp *int64) *[]model.Category {
+	var cat []model.Category
+	DBEngine.Where("type=?", tp).Find(&cat)
+	return &cat
+}
