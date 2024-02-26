@@ -22,3 +22,6 @@ func DeleteCat(id *int64) *error {
 	}
 	return nil
 }
+func UpdateCategory(cat *model.Category) {
+	db.CatDao.Update(cat)
+}

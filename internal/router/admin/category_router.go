@@ -59,5 +59,19 @@ func DeleteCat(ctx context.Context, c *app.RequestContext) {
 	} else {
 		c.JSON(http.StatusOK, common.Result{1, "", nil})
 	}
+}
 
+// 修改菜品分类信息
+// @Summary 修改菜品分类信息
+// @Accept application/json
+// @Produce application/json
+// @router /admin/category [put]
+func UpdateCat(ctx context.Context, c *app.RequestContext) {
+	var category model.Category
+	c.Bind(&category)
+	// 赋予创建时间和更新时间数据
+	category.CreateTime, category.UpdateTime = time.Now(), time.Now()
+	log.Println("修改菜品分类信息：", category)
+	service.UpdateCategory(&category)
+	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }

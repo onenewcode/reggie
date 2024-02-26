@@ -51,8 +51,8 @@ func InitRouter(r *server.Hertz) {
 		category.GET("/page", admin.PageCat)
 		// 添加按照id删除
 		category.DELETE("", admin.DeleteCat)
-		// 添加修改分类
-		//category.PUT("",admin.UpdateCat)
+		// 添加修改菜品分类
+		category.PUT("", admin.UpdateCat)
 		//// 启用禁用分类
 		//emp.POST("/status/:status", admin.StartOrStopCat)
 	}

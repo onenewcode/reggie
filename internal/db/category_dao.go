@@ -35,3 +35,6 @@ func (*CategoryDao) Delete(id *int64) *error {
 	}
 	return nil
 }
+func (*CategoryDao) Update(category *model.Category) {
+	DBEngine.Updates(category)
+}
