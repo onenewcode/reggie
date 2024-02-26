@@ -2252,6 +2252,109 @@ DBEngine.Updates(category)
 ![image](images/img_48.png)
 
 
+## 启用禁用分类
+接口信息
+![image](images/img_40.png)
+###  代码开发
+
+**1). 添加路由**
+在我们的根路由其中添加新增菜品的路由
+>internal/router/router.go
+```go
+		// 启用禁用分类
+emp.POST("/status/*status", admin.StartOrStopCat)
+```
+**2). router逻辑添加**
+在 category_router.go 中创建 PageCat 方法：
+>internal/router/admin/category_router.go
+```go
+// 启用禁用菜品分类
+// @Summary 启用禁用菜品分类
+// @Accept application/json
+// @Produce application/json
+// @router /admin/categorystatus [post]
+func StartOrStopCat(ctx context.Context, c *app.RequestContext) {
+status, id := c.Param("status"), c.Query("id")
+log.Printf("启用禁用员工账号：{%s},{%s}", status, id)
+status_r, _ := strconv.ParseInt(status, 10, 32)
+id_r, _ := strconv.ParseInt(id, 10, 64)
+service.StartOrStopCat(int32(status_r), id_r, middleware.GetJwtPayload(c))
+c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+```
+**3). 添加service逻辑**
+我们需要在我们的category_service.go添加相应功能。
+>internal/router/service/category_service.go
+```go
+func StartOrStopCat(status int32, id int64, update_user int64) {
+cat := model.Category{
+ID:         id,
+Status:     status,
+UpdateUser: update_user,
+UpdateTime: time.Now(),
+}
+db.CatDao.UpdateStatus(&cat)
+}
+```
+**4). dao层**
+
+在 category_dao.go文件中实现 PageQuery 方法：
+>internal/db/category_dao.go
+```go
+func (*CategoryDao) UpdateStatus(cat *model.Category) {
+DBEngine.Select("status", "update_time", "update_user").Updates(cat)
+}
+```
+
+### 功能测试
+
+#### 接口文档测试
+
+测试**添加菜品分类分页查询功能**
+
+我们再api工具在 访问 http://localhost:8080/admin/category/page/?page=1&pageSize=10&type=2 添加jwt令牌。
+![image](images/img_47.png)
+运行程序进行测试。
+调试结果
+```shell
+{
+    "code": 1,
+    "msg": "",
+    "data": {
+        "total": 2,
+        "records": [
+            {
+                "id": 15,
+                "type": 2,
+                "name": "商务套餐",
+                "sort": 13,
+                "status": 1,
+                "create_time": "2022-06-09T22:14:10+08:00",
+                "update_time": "2022-06-10T11:04:48+08:00",
+                "create_user": 1,
+                "update_user": 1
+            },
+            {
+                "id": 13,
+                "type": 2,
+                "name": "人气套餐",
+                "sort": 12,
+                "status": 1,
+                "create_time": "2022-06-09T22:11:38+08:00",
+                "update_time": "2022-06-10T11:04:40+08:00",
+                "create_user": 1,
+                "update_user": 1
+            }
+        ]
+    }
+}
+```
+
+
+
+#### 前后端联调测试
+登陆，然后点击分类管理，效果如下。
+![image](images/img_48.png)
 
 <a name="代码存在的问题"></a>
 # 代码存在的问题

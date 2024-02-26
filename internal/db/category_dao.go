@@ -38,3 +38,6 @@ func (*CategoryDao) Delete(id *int64) *error {
 func (*CategoryDao) Update(category *model.Category) {
 	DBEngine.Updates(category)
 }
+func (*CategoryDao) UpdateStatus(cat *model.Category) {
+	DBEngine.Select("status", "update_time", "update_user").Updates(cat)
+}

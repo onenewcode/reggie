@@ -5,6 +5,7 @@ import (
 	"reggie/internal/models/common"
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
+	"time"
 )
 
 func SaveCategory(category *model.Category) {
@@ -24,4 +25,13 @@ func DeleteCat(id *int64) *error {
 }
 func UpdateCategory(cat *model.Category) {
 	db.CatDao.Update(cat)
+}
+func StartOrStopCat(status int32, id int64, update_user int64) {
+	cat := model.Category{
+		ID:         id,
+		Status:     status,
+		UpdateUser: update_user,
+		UpdateTime: time.Now(),
+	}
+	db.CatDao.UpdateStatus(&cat)
 }
