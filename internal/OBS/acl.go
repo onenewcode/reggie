@@ -1,0 +1,41 @@
+package obs
+
+import (
+	"github.com/google/uuid"
+	"github.com/minio/minio-go"
+	"log"
+	"mime/multipart"
+	"path"
+	"strings"
+	"time"
+)
+
+type OBSSave interface {
+	UploadImg(fh *multipart.FileHeader) (*string, error)
+}
+
+/*
+实现类
+*/
+type MyMinio struct {
+}
+
+func (*MyMinio) UploadImg(fh *multipart.FileHeader) (*string, error) {
+	var str strings.Builder
+	str.WriteString(time.Now().Format("2006/01/02"))
+	// 生成一个新的UUIDv4
+	id := uuid.New()
+	str.WriteString(id.String())
+	str.WriteString(path.Ext(fh.Filename))
+	filepath := str.String()
+	file_body, _ := fh.Open()
+	_, err := minioClient.PutObject(bucketName, filepath, file_body, fh.Size, minio.PutObjectOptions{
+		ContentType: fh.Header.Get("Content-Type"),
+	})
+	if err != nil {
+		log.Fatalln(err)
+		return nil, err
+	}
+	return &filepath, nil
+
+}

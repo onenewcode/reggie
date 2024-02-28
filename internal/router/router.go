@@ -58,5 +58,9 @@ func InitRouter(r *server.Hertz) {
 		// 根据类型查询分类
 		category.GET("/list", admin.ListCat)
 	}
+	com := adm.Group("/common")
+	{
+		com.POST("/upload", admin.UploadImg)
+	}
 
 }
