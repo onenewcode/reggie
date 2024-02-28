@@ -2559,74 +2559,8 @@ func main() {
 
 其中，AliOssUtil.java已在sky-common模块中定义
 
-```java
+```go
 
-}
-```
-
-
-
-**4). 定义文件上传接口**
-
-在sky-server模块中定义接口
-
-```java
-package com.sky.controller.admin;
-
-import com.sky.constant.MessageConstant;
-import com.sky.result.Result;
-import com.sky.utils.AliOssUtil;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
-import java.util.UUID;
-
-/**
- * 通用接口
- */
-@RestController
-@RequestMapping("/admin/common")
-@Api(tags = "通用接口")
-@Slf4j
-public class CommonController {
-
-    @Autowired
-    private AliOssUtil aliOssUtil;
-
-    /**
-     * 文件上传
-     * @param file
-     * @return
-     */
-    @PostMapping("/upload")
-    @ApiOperation("文件上传")
-    public Result<String> upload(MultipartFile file){
-        log.info("文件上传：{}",file);
-
-        try {
-            //原始文件名
-            String originalFilename = file.getOriginalFilename();
-            //截取原始文件名的后缀   dfdfdf.png
-            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            //构造新文件名称
-            String objectName = UUID.randomUUID().toString() + extension;
-
-            //文件的请求路径
-            String filePath = aliOssUtil.upload(file.getBytes(), objectName);
-            return Result.success(filePath);
-        } catch (IOException e) {
-            log.error("文件上传失败：{}", e);
-        }
-
-        return Result.error(MessageConstant.UPLOAD_FAILED);
-    }
-}
 ```
 
 
@@ -2638,34 +2572,7 @@ public class CommonController {
 在sky-pojo模块中
 
 ```java
-package com.sky.dto;
 
-import com.sky.entity.DishFlavor;
-import lombok.Data;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-
-@Data
-public class DishDTO implements Serializable {
-
-    private Long id;
-    //菜品名称
-    private String name;
-    //菜品分类id
-    private Long categoryId;
-    //菜品价格
-    private BigDecimal price;
-    //图片
-    private String image;
-    //描述信息
-    private String description;
-    //0 停售 1 起售
-    private Integer status;
-    //口味
-    private List<DishFlavor> flavors = new ArrayList<>();
-}
 ```
 
 
@@ -2676,21 +2583,6 @@ public class DishDTO implements Serializable {
 
 ```java
 package com.sky.controller.admin;
-
-import com.sky.dto.DishDTO;
-import com.sky.dto.DishPageQueryDTO;
-import com.sky.entity.Dish;
-import com.sky.result.PageResult;
-import com.sky.result.Result;
-import com.sky.service.DishService;
-import com.sky.vo.DishVO;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.Set;
 
 /**
  * 菜品管理

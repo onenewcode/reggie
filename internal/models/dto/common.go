@@ -18,3 +18,20 @@ type CategoryPageQueryDTO struct {
 	//分类类型 1菜品分类  2套餐分类
 	Type *int `json:"type,omitempty" form:"type,omitempty"`
 }
+
+/*
+添加分页id
+*/
+type DishPageQueryDTO struct {
+	Page int `json:"page,omitempty"`
+
+	PageSize int `json:"page_size,omitempty"`
+
+	Name *string `json:"name,omitempty"`
+
+	//分类id
+	CategoryId *int `json:"category_id,omitempty"`
+
+	//状态 0表示禁用 1表示启用
+	Status *int `json:"status,omitempty"`
+}
