@@ -13,7 +13,7 @@ import (
 var DBEngine *gorm.DB
 var EmpDao = EmployeeDao{}
 var CatDao = CategoryDao{}
-var DisDao dishI
+var DisDao dishI = &dishDao{}
 
 func InitDB() {
 	// 创建一个新的logger实例，设置为verbose模式以输出详细日志，包括SQL语句

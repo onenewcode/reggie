@@ -11,7 +11,7 @@ import (
 )
 
 type OBSSave interface {
-	UploadImg(fh *multipart.FileHeader) (*string, error)
+	UploadImg(fh *multipart.FileHeader) *string
 }
 
 /*
@@ -20,9 +20,9 @@ type OBSSave interface {
 type MyMinio struct {
 }
 
-func (*MyMinio) UploadImg(fh *multipart.FileHeader) (*string, error) {
+func (*MyMinio) UploadImg(fh *multipart.FileHeader) *string {
 	var str strings.Builder
-	str.WriteString(time.Now().Format("2006/01/02"))
+	str.WriteString(time.Now().Format("2006/01/02/"))
 	// 生成一个新的UUIDv4
 	id := uuid.New()
 	str.WriteString(id.String())
@@ -32,10 +32,11 @@ func (*MyMinio) UploadImg(fh *multipart.FileHeader) (*string, error) {
 	_, err := minioClient.PutObject(bucketName, filepath, file_body, fh.Size, minio.PutObjectOptions{
 		ContentType: fh.Header.Get("Content-Type"),
 	})
+	filepath = "http://" + path.Join(endpoint, bucketName, filepath)
 	if err != nil {
 		log.Fatalln(err)
-		return nil, err
+		return nil
 	}
-	return &filepath, nil
+	return &filepath
 
 }

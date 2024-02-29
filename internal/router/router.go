@@ -65,9 +65,9 @@ func InitRouter(r *server.Hertz) {
 	dish := adm.Group("/dish")
 	{
 		// 添加菜品
-		//dish.POST("", admin.SaveDish)
+		dish.POST("", admin.SaveDish)
 		// 菜品分页查询
-		dish.GET("page", admin.PageDish)
+		dish.GET("/page", admin.PageDish)
 		// 菜品批量删除
 		dish.DELETE("", admin.DeleteDish)
 		// 按照id查询菜品
@@ -75,7 +75,7 @@ func InitRouter(r *server.Hertz) {
 		// 添加修改菜品
 		dish.PUT("", admin.UpdateDish)
 		// 启用禁用分类
-		category.POST("/status/*status", admin.StartOrStopDish)
+		dish.POST("/status/*status", admin.StartOrStopDish)
 		// 根据类型查询分类
 		dish.GET("/list", admin.ListDish)
 	}

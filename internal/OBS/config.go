@@ -20,16 +20,11 @@ const (
 
 func init() {
 	// 初使化minio client对象。
-	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, ssl)
+	mc, err := minio.New(endpoint, accessKeyID, secretAccessKey, ssl)
 	if err != nil {
 		log.Println(err)
 	} else {
-		minioClient = minioClient
+		minioClient = mc
 	}
 	OBS = &MyMinio{}
-}
-func main() {
-	if minioClient != nil {
-		log.Println("链接服务器成功")
-	}
 }

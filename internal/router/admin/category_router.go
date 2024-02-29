@@ -97,8 +97,8 @@ func StartOrStopCat(ctx context.Context, c *app.RequestContext) {
 // @router /admin/category/list [get]
 func ListCat(ctx context.Context, c *app.RequestContext) {
 	ty_pe := c.Query("type")
-	log.Printf("启用禁用员工账号：{%s}", ty_pe)
+	log.Printf("按照类型查询菜品：{%s}", ty_pe)
 	tp, _ := strconv.ParseInt(ty_pe, 10, 64)
-	service.ListCat(&tp)
-	c.JSON(http.StatusOK, common.Result{1, "", nil})
+
+	c.JSON(http.StatusOK, common.Result{1, "", service.ListCat(&tp)})
 }

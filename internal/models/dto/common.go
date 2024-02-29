@@ -23,15 +23,15 @@ type CategoryPageQueryDTO struct {
 添加分页id
 */
 type DishPageQueryDTO struct {
-	Page int `json:"page,omitempty"`
+	Page int `json:"page,omitempty" form:"page,omitempty"`
 
-	PageSize int `json:"page_size,omitempty"`
+	PageSize int `json:"pageSize,omitempty" form:"pageSize,omitempty"`
 
-	Name *string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty" form:"name,omitempty"`
 
 	//分类id
-	CategoryId *int `json:"category_id,omitempty"`
+	CategoryId *int `json:"category_id,omitempty" form:"categoryId,omitempty"`
 
 	//状态 0表示禁用 1表示启用
-	Status *int `json:"status,omitempty"`
+	Status *int `json:"status,omitempty" form:"status,omitempty"`
 }

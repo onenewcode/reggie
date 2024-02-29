@@ -11,20 +11,21 @@ import (
 	"reggie/internal/models/model"
 	"reggie/internal/router/service"
 	"strconv"
+	"strings"
 	"time"
 )
 
-//func SaveDish(ctx context.Context, c *app.RequestContext) {
-//	var dish model.Dish
-//	c.Bind(&dish)
-//	// 赋予创建用户和更新用户的数据
-//	dish.CreateUser, dish.UpdateUser = middleware.GetJwtPayload(c), middleware.GetJwtPayload(c)
-//	// 赋予创建时间和更新时间数据
-//	dish.CreateTime, dish.UpdateTime = time.Now(), time.Now()
-//	log.Println("新增分类：", dish)
-//	service.SaveDish(&dish)
-//	c.JSON(http.StatusOK, common.Result{1, "", nil})
-//}
+func SaveDish(ctx context.Context, c *app.RequestContext) {
+	var dish model.Dish
+	c.Bind(&dish)
+	// 赋予创建用户和更新用户的数据
+	dish.CreateUser, dish.UpdateUser = middleware.GetJwtPayload(c), middleware.GetJwtPayload(c)
+	// 赋予创建时间和更新时间数据
+	dish.CreateTime, dish.UpdateTime = time.Now(), time.Now()
+	log.Println("新增分类：", dish)
+	service.SaveDish(&dish)
+	c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
 
 func PageDish(ctx context.Context, c *app.RequestContext) {
 	var dishPage dto.DishPageQueryDTO
@@ -35,10 +36,16 @@ func PageDish(ctx context.Context, c *app.RequestContext) {
 }
 
 func DeleteDish(ctx context.Context, c *app.RequestContext) {
-	id := c.Query("id")
+	id := c.Query("ids")
+	nums := make([]int64, 0, 5)
 	log.Printf("根据id删除菜品：{%s}", id)
-	id_r, _ := strconv.ParseInt(id, 10, 64)
-	if err := service.DeleteDish(&id_r); err != nil {
+	ids := strings.Split(id, ",")
+	for _, v := range ids {
+		id_r, _ := strconv.ParseInt(v, 10, 64)
+		nums = append(nums, id_r)
+	}
+
+	if err := service.DeleteDish(&nums); err != nil {
 		log.Println(err)
 		c.JSON(http.StatusOK, common.Result{0, "", nil})
 	} else {
@@ -75,8 +82,8 @@ func ListDish(ctx context.Context, c *app.RequestContext) {
 }
 func GetByIdDish(ctx context.Context, c *app.RequestContext) {
 	id := c.Param("id")
-	log.Printf("查询员工账号：{%s}", id)
+	log.Printf("查询菜品：{%s}", id)
 	id_r, _ := strconv.ParseInt(id, 10, 64)
-	emp := service.GetByIdEmp(id_r)
+	emp := service.GetByIdDish(id_r)
 	c.JSON(http.StatusOK, common.Result{1, "", emp})
 }

@@ -7,10 +7,12 @@ import (
 
 type dishI interface {
 	PageQuery(page *dto.DishPageQueryDTO) (*[]model.Dish, int64)
-	Delete(id *int64) *error
+	Delete(id int64) *error
 	Update(dish *model.Dish)
 	UpdateStatus(cat *model.Dish)
 	List(tp *int64) *[]model.Dish
+	GetById(id int64) *model.Dish
+	Save(dish *model.Dish)
 }
 type dishDao struct {
 }
@@ -20,7 +22,7 @@ func (*dishDao) Save(dish *model.Dish) {
 }
 func (*dishDao) PageQuery(page *dto.DishPageQueryDTO) (*[]model.Dish, int64) {
 	var (
-		cat   []model.Dish
+		dish  []model.Dish
 		count int64
 	)
 	origin_sql := DBEngine
@@ -29,16 +31,16 @@ func (*dishDao) PageQuery(page *dto.DishPageQueryDTO) (*[]model.Dish, int64) {
 		origin_sql = origin_sql.Where("name LIKE ?", "%"+*page.Name+"%")
 	}
 	if page.CategoryId != nil {
-		origin_sql = origin_sql.Where("categoryId=?", page.CategoryId)
+		origin_sql = origin_sql.Where("category_id=?", page.CategoryId)
 	}
 	if page.Status != nil {
-		origin_sql = origin_sql.Where("status=?", page.CategoryId)
+		origin_sql = origin_sql.Where("status=?", page.Status)
 	}
-	origin_sql.Model(&model.Category{}).Count(&count)
-	origin_sql.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc").Find(&cat)
-	return &cat, count
+	origin_sql.Model(&model.Dish{}).Count(&count)
+	origin_sql.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc").Find(&dish)
+	return &dish, count
 }
-func (*dishDao) Delete(id *int64) *error {
+func (*dishDao) Delete(id int64) *error {
 	err := DBEngine.Delete(&model.Dish{}, id).Error
 	if err != nil {
 		return &err
@@ -54,5 +56,10 @@ func (*dishDao) UpdateStatus(cat *model.Dish) {
 func (*dishDao) List(tp *int64) *[]model.Dish {
 	var dish []model.Dish
 	DBEngine.Where("type=?", tp).Find(&dish)
+	return &dish
+}
+func (*dishDao) GetById(id int64) *model.Dish {
+	var dish model.Dish
+	DBEngine.Where("id=?", id).First(&dish)
 	return &dish
 }
