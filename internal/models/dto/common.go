@@ -1,5 +1,11 @@
 package dto
 
+import (
+	"encoding/json"
+	"reggie/internal/models/model"
+	"time"
+)
+
 type EmployeePageQueryDTO struct {
 	//员工姓名
 	Name *string `json:"name,omitempty" form:"name,omitempty"`
@@ -17,6 +23,26 @@ type CategoryPageQueryDTO struct {
 	PageSize int `json:"pageSize,omitempty" form:"pageSize,omitempty"`
 	//分类类型 1菜品分类  2套餐分类
 	Type *int `json:"type,omitempty" form:"type,omitempty"`
+}
+type DishDTO struct {
+	ID          int64               `json:"id,omitempty"`
+	Name        string              `json:"name,omitempty"`
+	CategoryID  int64               `json:"categoryId,omitempty"`
+	Price       float64             `json:"price,omitempty"`
+	Image       string              `json:"image,omitempty"`
+	Description string              `json:"description,omitempty"`
+	Status      int32               `json:"status,omitempty"`
+	flavors     []*model.DishFlavor `json:"flavors,omitempty"`
+}
+
+// 如果传入的id不等于nil，
+func (d *DishDTO) ToNewDish(id *int64) *model.Dish {
+	v, _ := json.Marshal(d)
+	var dish model.Dish
+	json.Unmarshal(v, &dish)
+	dish.CreateUser, dish.UpdateUser = *id, *id
+	dish.CreateTime, dish.UpdateTime = time.Now(), time.Now()
+	return &dish
 }
 
 /*

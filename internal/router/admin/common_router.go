@@ -5,9 +5,9 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"mime/multipart"
 	"net/http"
-	obs "reggie/internal/OBS"
 	"reggie/internal/models/common"
 	"reggie/internal/models/constant/message_c"
+	"reggie/pkg/obs"
 )
 
 func getFile(from *multipart.Form) *multipart.FileHeader {

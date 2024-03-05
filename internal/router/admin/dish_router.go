@@ -16,14 +16,12 @@ import (
 )
 
 func SaveDish(ctx context.Context, c *app.RequestContext) {
-	var dish model.Dish
-	c.Bind(&dish)
-	// 赋予创建用户和更新用户的数据
-	dish.CreateUser, dish.UpdateUser = middleware.GetJwtPayload(c), middleware.GetJwtPayload(c)
-	// 赋予创建时间和更新时间数据
-	dish.CreateTime, dish.UpdateTime = time.Now(), time.Now()
+	var dist dto.DishDTO
+	c.Bind(dist)
+	id := middleware.GetJwtPayload(c)
+	var dish = dist.ToNewDish(&id)
 	log.Println("新增分类：", dish)
-	service.SaveDish(&dish)
+	service.SaveDish(dish)
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
 

@@ -79,5 +79,10 @@ func InitRouter(r *server.Hertz) {
 		// 根据类型查询分类
 		dish.GET("/list", admin.ListDish)
 	}
+	shop := adm.Group("/shop")
+	{
+		shop.POST("/:status", admin.SetStatusShop)
+		shop.GET("/status", admin.GetStatusShop)
+	}
 
 }

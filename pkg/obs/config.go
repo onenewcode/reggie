@@ -7,7 +7,7 @@ import (
 
 var (
 	minioClient *minio.Client
-	OBS         OBSSave
+	OBS         OBSClient
 )
 
 const (

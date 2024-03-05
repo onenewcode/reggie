@@ -2517,9 +2517,10 @@ DBEngine.Select("status", "update_time", "update_user").Updates(cat)
 **实现步骤：**
 
 **1). 定义Minio相关配置,生成一个配置对象**
-我们在internal文件夹下创建minio文件夹,然后文件夹创建,config.go文件,并生成一个
+我们在pkg文件夹下先建一个obs文件夹，然后创建一个config.go文件。
+>pkg/obs/config.go
 ```go
-package main
+package obs
 
 import (
 	"github.com/minio/minio-go"
@@ -2527,7 +2528,8 @@ import (
 )
 
 var (
-	MinioClient *minio.Client
+	minioClient *minio.Client
+	OBS         OBSClient
 )
 
 const (
@@ -2535,260 +2537,179 @@ const (
 	accessKeyID     = "minioadmin"          // 对象存储的Access key
 	secretAccessKey = "minioadmin"          /// 对象存储的Secret key
 	ssl             = false                 //true代表使用HTTPS
+	bucketName      = "sky-take-out"        // 设置同名称
 )
 
 func init() {
 	// 初使化minio client对象。
-	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, ssl)
+	mc, err := minio.New(endpoint, accessKeyID, secretAccessKey, ssl)
 	if err != nil {
 		log.Println(err)
 	} else {
-		MinioClient = minioClient
+		minioClient = mc
 	}
+	OBS = &MyMinio{}
 }
-func main() {
-	if MinioClient != nil {
-		log.Println("链接服务器成功")
-	}
-}
-
 ```
 **2). 生成防腐层**
-
-
-
-其中，AliOssUtil.java已在sky-common模块中定义
-
 ```go
+package obs
+
+import (
+	"github.com/google/uuid"
+	"github.com/minio/minio-go"
+	"log"
+	"mime/multipart"
+	"path"
+	"strings"
+	"time"
+)
+
+type OBSClient interface {
+	UploadImg(fh *multipart.FileHeader) *string
+}
+
+/*
+实现类
+*/
+type MyMinio struct {
+}
+
+func (*MyMinio) UploadImg(fh *multipart.FileHeader) *string {
+	var str strings.Builder
+	str.WriteString(time.Now().Format("2006/01/02/"))
+	// 生成一个新的UUIDv4
+	id := uuid.New()
+	str.WriteString(id.String())
+	str.WriteString(path.Ext(fh.Filename))
+	filepath := str.String()
+	file_body, _ := fh.Open()
+	_, err := minioClient.PutObject(bucketName, filepath, file_body, fh.Size, minio.PutObjectOptions{
+		ContentType: fh.Header.Get("Content-Type"),
+	})
+	filepath = "http://" + path.Join(endpoint, bucketName, filepath)
+	if err != nil {
+		log.Fatalln(err)
+		return nil
+	}
+	return &filepath
+}
+```
+在上面的代码中我们抽象了一层接口，定义了OBSClient 接口，之后我们进行存储的时候，只需要调用该接口的方法，这样方便我们更换成华为，腾讯等OBS。
+
+之后我们定义了MyMinio的实体类，让他实现OBSClient的接口。
+
+**3). 添加路由**
+在router.go添加以下内容
+```go
+com := adm.Group("/common")
+	{
+		com.POST("/upload", admin.UploadImg)
+	}
+```
+**3). 添加route方法**
+我们在admin文件夹下创建eommon_router.go文件，并且添加以下内容、
+```go
+import (
+	"context"
+	"github.com/cloudwego/hertz/pkg/app"
+	"mime/multipart"
+	"net/http"
+	"reggie/internal/models/common"
+	"reggie/internal/models/constant/message_c"
+	"reggie/pkg/obs"
+)
+
+func getFile(from *multipart.Form) *multipart.FileHeader {
+	fileH := from.File["file"][0]
+	return fileH
+}
+func UploadImg(ctx context.Context, c *app.RequestContext) {
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusOK, common.Result{0, message_c.UPLOAD_FAILED, nil})
+	}
+	if str := obs.OBS.UploadImg(getFile(form)); str != nil {
+		c.JSON(http.StatusOK, common.Result{1, "", str})
+	}
+}
 
 ```
+这样我们的上传文件的功能就完成了。
+
+##### 客户端测试 ？
+
 
 
 
 ####  新增菜品实现
+**1). 添加路由**
+>internal/router/router.go
+```go
+dish := adm.Group("/dish")
+{
+// 添加菜品
+dish.POST("", admin.SaveDish)
 
-**1). 设计DTO类**
-
-在sky-pojo模块中
-
-```java
+}
 
 ```
 
-
-
-**2). Controller层**
-
-进入到sky-server模块
-
-```java
-package com.sky.controller.admin;
-
-/**
- * 菜品管理
- */
-@RestController
-@RequestMapping("/admin/dish")
-@Api(tags = "菜品相关接口")
-@Slf4j
-public class DishController {
-
-    @Autowired
-    private DishService dishService;
-
-    /**
-     * 新增菜品
-     *
-     * @param dishDTO
-     * @return
-     */
-    @PostMapping
-    @ApiOperation("新增菜品")
-    public Result save(@RequestBody DishDTO dishDTO) {
-        log.info("新增菜品：{}", dishDTO);
-        dishService.saveWithFlavor(dishDTO);//后绪步骤开发
-        return Result.success();
-    }
+**2). router层**
+我们在admin文件夹下创建dish_router.go文件
+>internal/router/admin/dish_router.go
+```go
+func SaveDish(ctx context.Context, c *app.RequestContext) {
+	var dish model.Dish
+	c.Bind(&dish)
+	// 赋予创建用户和更新用户的数据
+	dish.CreateUser, dish.UpdateUser = middleware.GetJwtPayload(c), middleware.GetJwtPayload(c)
+	// 赋予创建时间和更新时间数据
+	dish.CreateTime, dish.UpdateTime = time.Now(), time.Now()
+	log.Println("新增分类：", dish)
+	service.SaveDish(&dish)
+	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
+
 ```
 
 
 
 **3). Service层接口**
-
-```java
-package com.sky.service;
-
-import com.sky.dto.DishDTO;
-import com.sky.entity.Dish;
-
-public interface DishService {
-
-    /**
-     * 新增菜品和对应的口味
-     *
-     * @param dishDTO
-     */
-    public void saveWithFlavor(DishDTO dishDTO);
-
+>internal/router/service/dish_service.go
+```go
+func SaveDish(dish *model.Dish) {
+	db.DisDao.Save(dish)
 }
 ```
 
 
 
-**4). Service层实现类**
+**4). dao层实现类**
+我们在db文件夹下的db.go添加以下内容。
+>var DisDao dishI = &dishDao{}
+```go
+type dishI interface {
+	Save(dish *model.Dish)
+}
+type dishDao struct {
+}
 
-```java
-package com.sky.service.impl;
-
-
-@Service
-@Slf4j
-public class DishServiceImpl implements DishService {
-
-    @Autowired
-    private DishMapper dishMapper;
-    @Autowired
-    private DishFlavorMapper dishFlavorMapper;
-
-    /**
-     * 新增菜品和对应的口味
-     *
-     * @param dishDTO
-     */
-    @Transactional
-    public void saveWithFlavor(DishDTO dishDTO) {
-
-        Dish dish = new Dish();
-        BeanUtils.copyProperties(dishDTO, dish);
-
-        //向菜品表插入1条数据
-        dishMapper.insert(dish);//后绪步骤实现
-
-        //获取insert语句生成的主键值
-        Long dishId = dish.getId();
-
-        List<DishFlavor> flavors = dishDTO.getFlavors();
-        if (flavors != null && flavors.size() > 0) {
-            flavors.forEach(dishFlavor -> {
-                dishFlavor.setDishId(dishId);
-            });
-            //向口味表插入n条数据
-            dishFlavorMapper.insertBatch(flavors);//后绪步骤实现
-        }
-    }
-
+func (*dishDao) Save(dish *model.Dish) {
+	DBEngine.Create(dish)
 }
 ```
 
+##  菜品分页查询 ?
 
+### 需求分析和设计
 
-**5). Mapper层**
-
-DishMapper.java中添加
-
-```java
-	/**
-     * 插入菜品数据
-     *
-     * @param dish
-     */
-    @AutoFill(value = OperationType.INSERT)
-    void insert(Dish dish);
-```
-
-在/resources/mapper中创建DishMapper.xml
-
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="com.sky.mapper.DishMapper">
-
-    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into dish (name, category_id, price, image, description, create_time, update_time, create_user,update_user, status)
-        values (#{name}, #{categoryId}, #{price}, #{image}, #{description}, #{createTime}, #{updateTime}, #{createUser}, #{updateUser}, #{status})
-    </insert>
-</mapper>
-
-```
-
-DishFlavorMapper.java
-
-```java
-package com.sky.mapper;
-
-import com.sky.entity.DishFlavor;
-import java.util.List;
-
-@Mapper
-public interface DishFlavorMapper {
-    /**
-     * 批量插入口味数据
-     * @param flavors
-     */
-    void insertBatch(List<DishFlavor> flavors);
-
-}
-```
-
-在/resources/mapper中创建DishFlavorMapper.xml
-
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="com.sky.mapper.DishFlavorMapper">
-    <insert id="insertBatch">
-        insert into dish_flavor (dish_id, name, value) VALUES
-        <foreach collection="flavors" item="df" separator=",">
-            (#{df.dishId},#{df.name},#{df.value})
-        </foreach>
-    </insert>
-</mapper>
-```
-
-
-
-### 2.3 功能测试
-
-进入到菜品管理--->新建菜品
-
-<img src="assets/image-20221121195440804.png" alt="image-20221121195440804" style="zoom:50%;" /> 
-
-由于没有实现菜品查询功能，所以保存后，暂且在表中查看添加的数据。
-
-dish表：
-
-<img src="assets/image-20221121195737692.png" alt="image-20221121195737692" style="zoom:50%;" /> 
-
-dish_flavor表：
-
-<img src="assets/image-20221121195902555.png" alt="image-20221121195902555" style="zoom:50%;" /> 
-
-测试成功。
-
-
-
-### 2.4代码提交
-
-<img src="assets/image-20221121200332933.png" alt="image-20221121200332933" style="zoom:50%;" />  
-
-后续步骤和上述功能代码提交一致，不再赘述。
-
-
-
-## 3. 菜品分页查询
-
-### 3.1 需求分析和设计
-
-#### 3.1.1 产品原型
+#### 产品原型
 
 系统中的菜品数据很多的时候，如果在一个页面中全部展示出来会显得比较乱，不便于查看，所以一般的系统中都会以分页的方式来展示列表数据。
 
 **菜品分页原型：**
-
-<img src="assets/image-20221121201552489.png" alt="image-20221121201552489" style="zoom: 67%;" /> 
+![img](images/img_64.png)
 
 在菜品列表展示时，除了菜品的基本信息(名称、售价、售卖状态、最后操作时间)外，还有两个字段略微特殊，第一个是图片字段 ，我们从数据库查询出来的仅仅是图片的名字，图片要想在表格中回显展示出来，就需要下载这个图片。第二个是菜品分类，这里展示的是分类名称，而不是分类ID，此时我们就需要根据菜品的分类ID，去分类表中查询分类信息，然后在页面展示。
 
@@ -2800,93 +2721,50 @@ dish_flavor表：
 
 
 
-#### 3.1.2 接口设计
+#### 接口设计
 
 根据上述原型图，设计出相应的接口。
 
-<img src="assets/image-20221121202019258.png" alt="image-20221121202019258" style="zoom:50%;" /> <img src="assets/image-20221121202033284.png" alt="image-20221121202033284" style="zoom:50%;" />
+![img](images/img_65.png)
 
+###  代码开发
 
-
-### 3.2 代码开发
-
-#### 3.2.1 设计DTO类
+#### 设计DTO类
 
 **根据菜品分页查询接口定义设计对应的DTO：**
+>internal/models/dto/common.go
+```go
+/*
+添加分页id
+*/
+type DishPageQueryDTO struct {
+	Page int `json:"page,omitempty" form:"page,omitempty"`
 
-在sky-pojo模块中，已定义
+	PageSize int `json:"pageSize,omitempty" form:"pageSize,omitempty"`
 
-```java
-package com.sky.dto;
+	Name *string `json:"name,omitempty" form:"name,omitempty"`
 
-import lombok.Data;
-import java.io.Serializable;
+	//分类id
+	CategoryId *int `json:"category_id,omitempty" form:"categoryId,omitempty"`
 
-@Data
-public class DishPageQueryDTO implements Serializable {
-
-    private int page;
-    private int pageSize;
-    private String name;
-    private Integer categoryId; //分类id
-    private Integer status; //状态 0表示禁用 1表示启用
-
+	//状态 0表示禁用 1表示启用
+	Status *int `json:"status,omitempty" form:"status,omitempty"`
 }
+
 ```
 
 
 
-#### 3.2.2 设计VO类
+####  设计VO类
 
 **根据菜品分页查询接口定义设计对应的VO：**
 
 在sky-pojo模块中，已定义
 
-```java
-package com.sky.vo;
-
-import com.sky.entity.DishFlavor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class DishVO implements Serializable {
-
-    private Long id;
-    //菜品名称
-    private String name;
-    //菜品分类id
-    private Long categoryId;
-    //菜品价格
-    private BigDecimal price;
-    //图片
-    private String image;
-    //描述信息
-    private String description;
-    //0 停售 1 起售
-    private Integer status;
-    //更新时间
-    private LocalDateTime updateTime;
-    //分类名称
-    private String categoryName;
-    //菜品关联的口味
-    private List<DishFlavor> flavors = new ArrayList<>();
-}
-```
 
 
 
-#### 3.2.3 Controller层
+####  Controller层
 
 **根据接口定义创建DishController的page分页查询方法：**
 
@@ -3008,18 +2886,17 @@ public class DishVO implements Serializable {
 
 
 
-## 4. 删除菜品
+## 删除菜品
 
-### 4.1 需求分析和设计
+### 需求分析和设计
 
-#### 4.1.1 产品原型
+####  产品原型
 
 在菜品列表页面，每个菜品后面对应的操作分别为**修改**、**删除**、**停售**，可通过删除功能完成对菜品及相关的数据进行删除。
 
 **删除菜品原型：**
 
-<img src="assets/image-20221121211236356.png" alt="image-20221121211236356" style="zoom:67%;" /> 
-
+![img](images/img_66.png)
 
 
 **业务规则：**
@@ -3031,21 +2908,19 @@ public class DishVO implements Serializable {
 
 
 
-#### 4.1.2 接口设计
+####  接口设计
 
 根据上述原型图，设计出相应的接口。
-
-<img src="assets/image-20221121211801121.png" alt="image-20221121211801121" style="zoom:50%;" /> <img src="assets/image-20221121211814429.png" alt="image-20221121211814429" style="zoom:50%;" />
+![img](images/img_67.png)
 
 **注意：**删除一个菜品和批量删除菜品共用一个接口，故ids可包含多个菜品id,之间用逗号分隔。
 
 
 
-#### 4.1.3 表设计
+#### 表设计
 
 在进行删除菜品操作时，会涉及到以下三张表。
-
-<img src="assets/image-20221121212436851.png" alt="image-20221121212436851" style="zoom:50%;" /> 
+![img](images/img_67.png)
 
 **注意事项：**
 
@@ -3508,12 +3383,190 @@ SetmealDishMapper.xml
 
 
 
-### 5.4 代码提交
+## 店铺营业状态设置
 
-<img src="assets/image-20221122141554380.png" alt="image-20221122141554380" style="zoom:50%;" /> 
+###  需求分析和设计
 
-后续步骤和上述功能代码提交一致，不再赘述。
+####  产品原型
 
+进到苍穹外卖后台，显示餐厅的营业状态，营业状态分为**营业中**和**打烊中**，若当前餐厅处于营业状态，自动接收任何订单，客户可在小程序进行下单操作；若当前餐厅处于打烊状态，不接受任何订单，客户便无法在小程序进行下单操作。
+![img](images/img_69.png)
+
+点击**营业状态**按钮时，弹出更改营业状态
+![img](images/img_70.png)
+选择营业，设置餐厅为**营业中**状态
+
+选择打烊，设置餐厅为**打烊中**状态
+
+**状态说明：**
+
+![img](images/img_71.png)
+
+####  接口设计
+
+根据上述原型图设计接口，共包含3个接口。
+
+**接口设计：**
+
+- 设置营业状态
+- 管理端查询营业状态
+- 用户端查询营业状态
+
+**注：**从技术层面分析，其实管理端和用户端查询营业状态时，可通过一个接口去实现即可。因为营业状态是一致的。但是，本项目约定：
+
+- **管理端**发出的请求，统一使用/admin作为前缀。
+- **用户端**发出的请求，统一使用/user作为前缀。
+
+因为访问路径不一致，故分为两个接口实现。
+
+**1). 设置营业状态**
+![img](images/img_71.png)
+
+
+**2). 管理端营业状态**
+![img](images/img_73.png)
+
+
+**3). 用户端营业状态**
+![img](images/img_74.png)
+
+####  营业状态存储方式
+
+虽然，可以通过一张表来存储营业状态数据，但整个表中只有一个字段，所以意义不大。
+
+营业状态数据存储方式：基于Redis的字符串来进行存储
+
+**约定：**1表示营业 0表示打烊
+
+
+
+###  代码开发
+
+####  设置营业状态
+1. 添加路由
+>internal/router/router.go
+```go
+shop := adm.Group("/shop")
+	{
+		shop.POST("/:status", admin.SetStatusShop)
+	}
+```
+2. 设置router
+>internal/router/admin/shop_router.go
+```go
+func SetStatusShop(ctx context.Context, c *app.RequestContext) {
+	s := c.Param("status")
+	status, _ := strconv.Atoi(s)
+	var statusString string
+	if status == 1 {
+		statusString = "营业中"
+	} else {
+		statusString = "打烊中"
+	}
+	hlog.Infof("设置店铺的营业状态为：", statusString)
+	service.SetStatusShop(&status)
+	c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+```
+3. 设置service
+>internal/router/service/shop_service.go
+```go
+func SetStatusShop(status *int) {
+	redis.RC.SetStatus(status)
+}
+
+```
+
+#### 管理端查询营业状态
+
+
+1. 添加路由
+>internal/router/router.go
+```go
+	shop.GET("/status", admin.GetStatusShop)
+```
+2. 设置router
+>internal/router/admin/shop_router.go
+```go
+func GetStatusShop(ctx context.Context, c *app.RequestContext) {
+
+status := *service.GetStatusShop()
+var statusString string
+if status == 1 {
+statusString = "营业中"
+} else {
+statusString = "打烊中"
+}
+hlog.Infof("获取到店铺的营业状态为：{}", statusString)
+service.SetStatusShop(&status)
+c.JSON(http.StatusOK, common.Result{1, "", nil})
+}
+
+```
+3. 设置service
+>internal/router/service/shop_service.go
+```go
+func GetStatusShop() *int {
+return redis.RC.GetStatus()
+}
+```
+### 添加redis
+在pkg在创建redis文件夹，然后在acl.go文件和config.go文件。
+>pkg/redis/acl.go
+```go
+package redis
+
+import "context"
+
+type RedisClient interface {
+	SetStatus(status *int)
+	GetStatus() *int
+}
+type redisClient struct {
+}
+
+func (*redisClient) SetStatus(status *int) {
+	rc.Set(
+		context.Background(),
+		shop_key,
+		status,
+		0,
+	)
+}
+func (*redisClient) GetStatus() *int {
+	val, _ := rc.Get(context.Background(), shop_key).Int()
+	return &val
+}
+
+```
+>pkg/redis/config.go
+```go
+package redis
+
+import "github.com/redis/go-redis/v9"
+
+var (
+	rc *redis.Client
+	RC RedisClient
+)
+
+const (
+	addr      = "localhost:6379"
+	pass_word = ""
+	db        = 0
+	shop_key  = "SHOP_STATUS"
+)
+
+func init() {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: pass_word, // 没有密码，默认值
+		DB:       db,        // 默认DB 0
+	})
+	rc = rdb
+	RC = &redisClient{}
+}
+```
 
 <a name="代码存在的问题"></a>
 # 代码存在的问题
@@ -3545,6 +3598,9 @@ SetmealDishMapper.xml
   "sort": 3
 }
 ```
+
+
+
 ### 解决方法
 #### 添加vo视图（不推荐）
 我们可以新建一个视图,让视图能够接受字符串类型，之后我们再转换成int类型赋值给需要插入的类，但是不建议这么做，因为go的类型转换还是有点繁琐，建议还是改前端。

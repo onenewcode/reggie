@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type OBSSave interface {
+type OBSClient interface {
 	UploadImg(fh *multipart.FileHeader) *string
 }
 

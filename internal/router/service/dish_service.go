@@ -8,8 +8,9 @@ import (
 	"time"
 )
 
-func SaveDish(dish *model.Dish) {
+func SaveDish(dish *model.Dish) *model.Dish {
 	db.DisDao.Save(dish)
+	return dish
 }
 func PageQueryDish(categoryPage *dto.DishPageQueryDTO) *common.PageResult {
 	var pageResult = common.PageResult{}
