@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reggie/internal/middleware"
 	"reggie/internal/router/admin"
+	"reggie/internal/router/user"
 )
 
 func InitRouter(r *server.Hertz) {
@@ -84,5 +85,9 @@ func InitRouter(r *server.Hertz) {
 		shop.POST("/:status", admin.SetStatusShop)
 		shop.GET("/status", admin.GetStatusShop)
 	}
-
+	users := r.Group("/user")
+	{
+		us := users.Group("/user")
+		us.POST("/login", user.LoginUser)
+	}
 }

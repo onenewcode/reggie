@@ -61,3 +61,18 @@ type DishPageQueryDTO struct {
 	//状态 0表示禁用 1表示启用
 	Status *int `json:"status,omitempty" form:"status,omitempty"`
 }
+
+/**
+ * C端用户登录
+ */
+type UserLoginDTO struct {
+	Code string `json:"code,omitempty"`
+}
+
+// userDto转换成user，更新用户时间
+func (u *UserLoginDTO) ToNewUser() *model.User {
+	var us model.User
+	us.Openid = u.Code
+	us.CreateTime = time.Now()
+	return &us
+}

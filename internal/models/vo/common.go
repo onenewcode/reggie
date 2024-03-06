@@ -35,3 +35,9 @@ type DishVO struct {
 	//菜品关联的口味
 	flavors []*model.DishFlavor `json:"flavors,omitempty"`
 }
+
+type UserLoginVO struct {
+	id     int64  `json:"id,omitempty"`
+	openid string `json:"openid,omitempty"`
+	token  string `json:"token,omitempty"`
+}
