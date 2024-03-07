@@ -11,8 +11,8 @@ import (
 )
 
 var DBEngine *gorm.DB
-var EmpDao = EmployeeDao{}
-var CatDao = CategoryDao{}
+var EmpDao empI = &employeeDao{}
+var CatDao catI = &categoryDao{}
 var DisDao dishI = &dishDao{}
 var UserDao userI = &userDao{}
 

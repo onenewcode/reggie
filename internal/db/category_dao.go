@@ -5,13 +5,21 @@ import (
 	"reggie/internal/models/model"
 )
 
-type CategoryDao struct {
+type catI interface {
+	Save(category *model.Category)
+	PageQuery(page *dto.CategoryPageQueryDTO) (*[]model.Category, int64)
+	Delete(id *int64) *error
+	Update(category *model.Category)
+	UpdateStatus(cat *model.Category)
+	List(tp *int64) *[]model.Category
+}
+type categoryDao struct {
 }
 
-func (*CategoryDao) Save(category *model.Category) {
+func (*categoryDao) Save(category *model.Category) {
 	DBEngine.Create(category)
 }
-func (*CategoryDao) PageQuery(page *dto.CategoryPageQueryDTO) (*[]model.Category, int64) {
+func (*categoryDao) PageQuery(page *dto.CategoryPageQueryDTO) (*[]model.Category, int64) {
 	var (
 		cat   []model.Category
 		count int64
@@ -28,20 +36,20 @@ func (*CategoryDao) PageQuery(page *dto.CategoryPageQueryDTO) (*[]model.Category
 	origin_sql.Limit(page.PageSize).Offset((page.Page - 1) * page.PageSize).Order("create_time desc").Find(&cat)
 	return &cat, count
 }
-func (*CategoryDao) Delete(id *int64) *error {
+func (*categoryDao) Delete(id *int64) *error {
 	err := DBEngine.Delete(&model.Category{}, id).Error
 	if err != nil {
 		return &err
 	}
 	return nil
 }
-func (*CategoryDao) Update(category *model.Category) {
+func (*categoryDao) Update(category *model.Category) {
 	DBEngine.Updates(category)
 }
-func (*CategoryDao) UpdateStatus(cat *model.Category) {
+func (*categoryDao) UpdateStatus(cat *model.Category) {
 	DBEngine.Select("status", "update_time", "update_user").Updates(cat)
 }
-func (*CategoryDao) List(tp *int64) *[]model.Category {
+func (*categoryDao) List(tp *int64) *[]model.Category {
 	var cat []model.Category
 	DBEngine.Where("type=?", tp).Find(&cat)
 	return &cat

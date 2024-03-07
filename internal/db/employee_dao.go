@@ -5,19 +5,29 @@ import (
 	"reggie/internal/models/model"
 )
 
-type EmployeeDao struct {
+type empI interface {
+	GetByUserName(username string) *model.Employee
+	Insert(emp *model.Employee)
+
+	PageQuery(page *dto.EmployeePageQueryDTO) (*[]model.Employee, int64)
+
+	UpdateStatus(emp *model.Employee)
+	GetById(id int64) *model.Employee
+	Update(emp *model.Employee)
+}
+type employeeDao struct {
 }
 
-func (*EmployeeDao) GetByUserName(username string) *model.Employee {
+func (*employeeDao) GetByUserName(username string) *model.Employee {
 	var emp model.Employee
 	DBEngine.Where("username=?", username).First(&emp)
 	return &emp
 }
-func (*EmployeeDao) Insert(emp *model.Employee) {
+func (*employeeDao) Insert(emp *model.Employee) {
 	DBEngine.Create(emp)
 }
 
-func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) (*[]model.Employee, int64) {
+func (*employeeDao) PageQuery(page *dto.EmployeePageQueryDTO) (*[]model.Employee, int64) {
 	var (
 		users []model.Employee
 		count int64
@@ -32,14 +42,14 @@ func (*EmployeeDao) PageQuery(page *dto.EmployeePageQueryDTO) (*[]model.Employee
 	return &users, count
 }
 
-func (*EmployeeDao) UpdateStatus(emp *model.Employee) {
+func (*employeeDao) UpdateStatus(emp *model.Employee) {
 	DBEngine.Select("status", "update_time", "update_user").Updates(emp)
 }
-func (*EmployeeDao) GetById(id int64) *model.Employee {
+func (*employeeDao) GetById(id int64) *model.Employee {
 	var emp model.Employee
 	DBEngine.Where("id=?", id).First(&emp)
 	return &emp
 }
-func (*EmployeeDao) Update(emp *model.Employee) {
+func (*employeeDao) Update(emp *model.Employee) {
 	DBEngine.Updates(emp)
 }
