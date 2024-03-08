@@ -76,3 +76,14 @@ func (u *UserLoginDTO) ToNewUser() *model.User {
 	us.CreateTime = time.Now()
 	return &us
 }
+
+type SetmealDTO struct {
+	id            int64
+	categoryId    int64
+	name          string
+	price         float64
+	status        int32
+	description   string
+	image         string
+	setmealDishes *[]model.SetmealDish
+}

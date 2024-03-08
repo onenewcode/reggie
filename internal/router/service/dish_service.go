@@ -1,8 +1,11 @@
 package service
 
 import (
+	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"reggie/internal/db"
 	"reggie/internal/models/common"
+	"reggie/internal/models/constant/message_c"
+	"reggie/internal/models/constant/status_c"
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 	"time"
@@ -24,11 +27,26 @@ func PageQueryDish(categoryPage *dto.DishPageQueryDTO) *common.PageResult {
 }
 func DeleteDish(ids *[]int64) *error {
 	for i := 0; i < len(*ids); i++ {
-
-		err := db.DisDao.Delete((*ids)[i])
-		if err != nil {
-			return err
+		err := db.DisDao.GetById((*ids)[i])
+		//判断当前菜品是否能够删除---是否存在起售中的菜品？？
+		if err.Status == status_c.ENABLE {
+			//当前菜品处于起售中，不能删除
+			hlog.Error(err)
+			return nil
 		}
+	}
+	//判断当前菜品是否能够删除---是否被套餐关联了？？
+	nums := db.MealDishDao.GetSetmealIdsByDishIds(ids)
+	if len(*nums) != 0 {
+		//当前菜品被套餐关联了，不能删除
+		hlog.Error(message_c.DISH_BE_RELATED_BY_SETMEAL)
+		return nil
+	}
+	//删除菜品表中的菜品数据
+	for i := 0; i < len(*ids); i++ {
+		db.DisDao.Delete((*ids)[i])
+		//删除菜品关联的口味数据
+		db.DisDao.Delete((*ids)[i])
 	}
 	return nil
 }

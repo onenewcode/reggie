@@ -16,6 +16,7 @@ var CatDao catI = &categoryDao{}
 var DisDao dishI = &dishDao{}
 var UserDao userI = &userDao{}
 var DishFDao dishFI = &dishFDao{}
+var MealDishDao meal_dishI = &mealDishDao{}
 
 func InitDB() {
 	// 创建一个新的logger实例，设置为verbose模式以输出详细日志，包括SQL语句

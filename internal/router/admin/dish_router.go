@@ -38,6 +38,7 @@ func DeleteDish(ctx context.Context, c *app.RequestContext) {
 	nums := make([]int64, 0, 5)
 	log.Printf("根据id删除菜品：{%s}", id)
 	ids := strings.Split(id, ",")
+	// 转换成数字数组
 	for _, v := range ids {
 		id_r, _ := strconv.ParseInt(v, 10, 64)
 		nums = append(nums, id_r)
