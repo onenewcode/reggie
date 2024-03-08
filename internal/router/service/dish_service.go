@@ -8,8 +8,13 @@ import (
 	"time"
 )
 
-func SaveDish(dish *model.Dish) *model.Dish {
+// 第一个参数菜品，第二个参数菜品口味数组
+func SaveWithFlavorDish(dish *model.Dish, flavors *[]model.DishFlavor) *model.Dish {
 	db.DisDao.Save(dish)
+	for _, v := range *flavors {
+		v.DishID = dish.ID
+	}
+	db.DishFDao.InsertBatch(flavors)
 	return dish
 }
 func PageQueryDish(categoryPage *dto.DishPageQueryDTO) *common.PageResult {

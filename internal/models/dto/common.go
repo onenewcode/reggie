@@ -25,14 +25,14 @@ type CategoryPageQueryDTO struct {
 	Type *int `json:"type,omitempty" form:"type,omitempty"`
 }
 type DishDTO struct {
-	ID          int64               `json:"id,omitempty"`
-	Name        string              `json:"name,omitempty"`
-	CategoryID  int64               `json:"categoryId,omitempty"`
-	Price       float64             `json:"price,omitempty"`
-	Image       string              `json:"image,omitempty"`
-	Description string              `json:"description,omitempty"`
-	Status      int32               `json:"status,omitempty"`
-	flavors     []*model.DishFlavor `json:"flavors,omitempty"`
+	ID          int64              `json:"id,omitempty"`
+	Name        string             `json:"name,omitempty"`
+	CategoryID  int64              `json:"categoryId,omitempty"`
+	Price       float64            `json:"price,omitempty"`
+	Image       string             `json:"image,omitempty"`
+	Description string             `json:"description,omitempty"`
+	Status      int32              `json:"status,omitempty"`
+	Flavors     []model.DishFlavor `json:"flavors,omitempty"`
 }
 
 // 如果传入的id不等于nil，

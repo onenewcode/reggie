@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 )
@@ -12,13 +13,18 @@ type dishI interface {
 	UpdateStatus(cat *model.Dish)
 	List(tp *int64) *[]model.Dish
 	GetById(id int64) *model.Dish
-	Save(dish *model.Dish)
+	Save(dish *model.Dish) *model.Dish
 }
 type dishDao struct {
 }
 
-func (*dishDao) Save(dish *model.Dish) {
-	DBEngine.Create(dish)
+func (*dishDao) Save(dish *model.Dish) *model.Dish {
+
+	if err := DBEngine.Select("*").Create(dish); err != nil {
+		hlog.Error(err)
+		return nil
+	}
+	return dish
 }
 func (*dishDao) PageQuery(page *dto.DishPageQueryDTO) (*[]model.Dish, int64) {
 	var (

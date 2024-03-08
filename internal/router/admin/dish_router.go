@@ -17,11 +17,11 @@ import (
 
 func SaveDish(ctx context.Context, c *app.RequestContext) {
 	var dist dto.DishDTO
-	c.Bind(dist)
+	c.Bind(&dist)
 	id := middleware.GetJwtPayload(c)
 	var dish = dist.ToNewDish(&id)
 	log.Println("新增分类：", dish)
-	service.SaveDish(dish)
+	service.SaveWithFlavorDish(dish, &dist.Flavors)
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
 
