@@ -14,10 +14,12 @@ func WxLoginUser(userLoginDTO *dto.UserLoginDTO) *model.User {
 	if op_id == nil {
 		hlog.Error(message_c.LOGIN_FAILED)
 	}
-	us := db.UserDao.GetByOpenid(op_id)
+	var us *model.User
+	us = db.UserDao.GetByOpenid(op_id)
 	// 查询不到，就字段添加新用户
 	if us == nil {
-		db.UserDao.Insert(userLoginDTO.ToNewUser())
+		us = db.UserDao.Insert(userLoginDTO.ToNewUser())
 	}
+
 	return us
 }

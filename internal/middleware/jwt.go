@@ -159,7 +159,7 @@ func jwtIdentityHandlerUser(ctx context.Context, c *app.RequestContext) interfac
 
 // 生成jwt负载的函数，指定了Authenticator方法生成的数据如何存储和怎么样存储c.Get("JWT_PAYLOAD")访问
 func jwtPayloadFuncUser(data interface{}) jwt.MapClaims {
-	if v, ok := data.(*vo.EmployeeLoginVO); ok {
+	if v, ok := data.(*vo.UserLoginVO); ok {
 		return jwt.MapClaims{
 			IdentityKey: v,
 		}
@@ -169,21 +169,22 @@ func jwtPayloadFuncUser(data interface{}) jwt.MapClaims {
 
 func jwtLoginResponseUser(ctx context.Context, c *app.RequestContext, code int, token string, expire time.Time) {
 	var us, _ = c.Get(IdentityKey)
-	//rely := elv.(*model.User)
-	//rely.Token = token
-	c.JSON(http.StatusOK, common.Result{1, "", us})
+	rely := us.(*vo.UserLoginVO)
+	rely.Token = token
+	c.JSON(http.StatusOK, common.Result{1, "", rely})
 }
 
 // 返回值会被存在Claim数组中
 func jwtAuthenticatorUser(ctx context.Context, c *app.RequestContext) (interface{}, error) {
+	var ul = &vo.UserLoginVO{}
 	var userLoginDto dto.UserLoginDTO
 	c.Bind(&userLoginDto)
 	hlog.Info("微信用户登录：{}", userLoginDto)
-
 	us := service.WxLoginUser(&userLoginDto)
+	ul.User2UserLoginVO(us)
 	// 这里我们把对象值存入c中，方便在返回函数中进行包装
-	c.Set(IdentityKey, &us)
-	return &us, nil
+	c.Set(IdentityKey, ul)
+	return &ul, nil
 
 }
 

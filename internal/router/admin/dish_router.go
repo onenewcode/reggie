@@ -51,7 +51,13 @@ func DeleteDish(ctx context.Context, c *app.RequestContext) {
 		c.JSON(http.StatusOK, common.Result{1, "", nil})
 	}
 }
-
+func GetByIdDish(ctx context.Context, c *app.RequestContext) {
+	id := c.Param("id")
+	log.Printf("查询菜品：{%s}", id)
+	id_r, _ := strconv.ParseInt(id, 10, 64)
+	emp := service.GetByIdWithFlavor(id_r)
+	c.JSON(http.StatusOK, common.Result{1, "", emp})
+}
 func UpdateDish(ctx context.Context, c *app.RequestContext) {
 	var dish model.Dish
 	c.Bind(&dish)
@@ -73,16 +79,9 @@ func StartOrStopDish(ctx context.Context, c *app.RequestContext) {
 
 // 根据类型查询分类
 func ListDish(ctx context.Context, c *app.RequestContext) {
-	ty_pe := c.Query("type")
+	ty_pe := c.Query("categoryId")
 	log.Printf("按照类型查询菜品：{%s}", ty_pe)
 	tp, _ := strconv.ParseInt(ty_pe, 10, 64)
-	service.ListDish(&tp)
-	c.JSON(http.StatusOK, common.Result{1, "", nil})
-}
-func GetByIdDish(ctx context.Context, c *app.RequestContext) {
-	id := c.Param("id")
-	log.Printf("查询菜品：{%s}", id)
-	id_r, _ := strconv.ParseInt(id, 10, 64)
-	emp := service.GetByIdDish(id_r)
-	c.JSON(http.StatusOK, common.Result{1, "", emp})
+	dish := service.ListDish(&tp)
+	c.JSON(http.StatusOK, common.Result{1, "", dish})
 }

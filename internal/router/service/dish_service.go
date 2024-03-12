@@ -8,6 +8,7 @@ import (
 	"reggie/internal/models/constant/status_c"
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
+	"reggie/internal/models/vo"
 	"time"
 )
 
@@ -46,7 +47,7 @@ func DeleteDish(ids *[]int64) *error {
 	for i := 0; i < len(*ids); i++ {
 		db.DisDao.Delete((*ids)[i])
 		//删除菜品关联的口味数据
-		db.DisDao.Delete((*ids)[i])
+		db.DishFDao.DeleteByDishId((*ids)[i])
 	}
 	return nil
 }
@@ -65,6 +66,14 @@ func StartOrStopDish(status int32, id int64, update_user int64) {
 func ListDish(tp *int64) *[]model.Dish {
 	return db.DisDao.List(tp)
 }
-func GetByIdDish(id int64) *model.Dish {
-	return db.DisDao.GetById(id)
+func GetByIdWithFlavor(id int64) *vo.DishVO {
+	dvo := &vo.DishVO{}
+	//根据id查询菜品数据
+	dish := db.DisDao.GetById(id)
+
+	//根据菜品id查询口味数据
+
+	dishFlavors := db.DishFDao.GetByDishId(id)
+	dvo.ForDishAndFlavor(dish, dishFlavors)
+	return dvo
 }

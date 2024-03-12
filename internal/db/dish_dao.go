@@ -59,9 +59,11 @@ func (*dishDao) Update(dish *model.Dish) {
 func (*dishDao) UpdateStatus(cat *model.Dish) {
 	DBEngine.Select("status", "update_time", "update_user").Updates(cat)
 }
+
+// 根据菜品分类查询菜品
 func (*dishDao) List(tp *int64) *[]model.Dish {
 	var dish []model.Dish
-	DBEngine.Where("type=?", tp).Find(&dish)
+	DBEngine.Where("category_id=?", tp).Find(&dish)
 	return &dish
 }
 func (*dishDao) GetById(id int64) *model.Dish {

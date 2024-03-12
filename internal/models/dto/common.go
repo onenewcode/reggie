@@ -78,12 +78,46 @@ func (u *UserLoginDTO) ToNewUser() *model.User {
 }
 
 type SetmealDTO struct {
-	id            int64
-	categoryId    int64
-	name          string
-	price         float64
-	status        int32
-	description   string
-	image         string
-	setmealDishes *[]model.SetmealDish
+	Id          int64   `json:"id,omitempty"`
+	CategoryId  int64   `json:"categoryId,omitempty"`
+	Name        string  `json:"name,omitempty"`
+	Price       float64 `json:"price,omitempty"`
+	Status      int32   `json:"status,omitempty"`
+	Description string  `json:"description,omitempty"`
+	Image       string  `json:"image,omitempty"`
+	// 菜品套餐关系
+	SetmealDishes *[]model.SetmealDish `json:"setmealDishes,omitempty"`
+}
+
+func (sm *SetmealDTO) ToNewSetmeal() *model.Setmeal {
+	m := &model.Setmeal{}
+	m.ID = sm.Id
+	m.CategoryID = sm.CategoryId
+	m.Name = sm.Name
+	m.Price = sm.Price
+	m.Status = sm.Status
+	m.Description = sm.Description
+	m.Image = sm.Image
+	m.CreateTime = time.Now()
+	m.UpdateTime = time.Now()
+
+	return m
+}
+
+type WXLoginDto struct {
+	SessionKey string `json:"session_key,omitempty"`
+	OpenID     string `json:"openid,omitempty"`
+}
+type SetmealPageQueryDTO struct {
+	Page int `json:"page,omitempty" form:"page,omitempty"`
+
+	PageSize int `json:"pageSize,omitempty" form:"pageSize,omitempty"`
+
+	Name *string `json:"name,omitempty" form:"name,omitempty"`
+
+	//分类id
+	CategoryId *int `json:"category_id,omitempty" form:"categoryId,omitempty"`
+
+	//状态 0表示禁用 1表示启用
+	Status *int `json:"status,omitempty" form:"status,omitempty"`
 }

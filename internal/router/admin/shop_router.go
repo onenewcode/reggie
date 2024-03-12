@@ -25,7 +25,6 @@ func SetStatusShop(ctx context.Context, c *app.RequestContext) {
 }
 
 func GetStatusShop(ctx context.Context, c *app.RequestContext) {
-
 	status := *service.GetStatusShop()
 	var statusString string
 	if status == 1 {
@@ -34,6 +33,5 @@ func GetStatusShop(ctx context.Context, c *app.RequestContext) {
 		statusString = "打烊中"
 	}
 	hlog.Infof("获取到店铺的营业状态为：{}", statusString)
-	service.SetStatusShop(&status)
-	c.JSON(http.StatusOK, common.Result{1, "", nil})
+	c.JSON(http.StatusOK, common.Result{1, "", status})
 }

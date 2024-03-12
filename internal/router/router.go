@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"reggie/internal/middleware"
 	"reggie/internal/router/admin"
-	"reggie/internal/router/user"
 )
 
 func InitRouter(r *server.Hertz) {
@@ -80,14 +79,27 @@ func InitRouter(r *server.Hertz) {
 		// 根据类型查询分类
 		dish.GET("/list", admin.ListDish)
 	}
+	// 套餐接口
+	meal := adm.Group("/setmeal")
+	{
+		meal.POST("", admin.SaveSetMealWithDish)
+		meal.GET("/page", admin.PageSetMeal)
+		meal.GET("/:id", admin.GetByIDDishMeal)
+		meal.DELETE("", admin.DeleteBatchMeal)
+		meal.PUT("", admin.UpdateMeal)
+		meal.POST("/status/:status", admin.StartOrStopMeal)
+	}
 	shop := adm.Group("/shop")
 	{
-		shop.POST("/:status", admin.SetStatusShop)
+		shop.PUT("/:status", admin.SetStatusShop)
 		shop.GET("/status", admin.GetStatusShop)
 	}
 	users := r.Group("/user")
+	userJ := middleware.InitJwtUser()
+	us := users.Group("/user")
+	us.POST("/login", userJ.LoginHandler)
+	us.Use(userJ.MiddlewareFunc())
 	{
-		us := users.Group("/user")
-		us.POST("/login", user.LoginUser)
+
 	}
 }

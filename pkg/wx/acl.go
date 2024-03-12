@@ -1,9 +1,11 @@
 package wx
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
+	"reggie/internal/models/dto"
 )
 
 type wxInterface interface {
@@ -33,6 +35,8 @@ func (*wxClient) GetOpenid(code *string) *string {
 	if err != nil {
 		panic(err)
 	}
-	jsonResponse := string(body)
-	return &jsonResponse
+	var wxl dto.WXLoginDto
+	json.Unmarshal(body, &wxl)
+
+	return &wxl.OpenID
 }

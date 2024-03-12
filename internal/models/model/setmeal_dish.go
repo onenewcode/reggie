@@ -10,7 +10,7 @@ const TableNameSetmealDish = "setmeal_dish"
 type SetmealDish struct {
 	ID        int64   `gorm:"column:id;primaryKey;autoIncrement:true;comment:主键" json:"id"` // 主键
 	SetmealID int64   `gorm:"column:setmeal_id;comment:套餐id" json:"setmeal_id"`             // 套餐id
-	DishID    int64   `gorm:"column:dish_id;comment:菜品id" json:"dish_id"`                   // 菜品id
+	DishID    int64   `gorm:"column:dish_id;comment:菜品id" json:"dishID"`                    // 菜品id
 	Name      string  `gorm:"column:name;comment:菜品名称 （冗余字段）" json:"name"`                  // 菜品名称 （冗余字段）
 	Price     float64 `gorm:"column:price;comment:菜品单价（冗余字段）" json:"price"`                 // 菜品单价（冗余字段）
 	Copies    int32   `gorm:"column:copies;comment:菜品份数" json:"copies"`                     // 菜品份数

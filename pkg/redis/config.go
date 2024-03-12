@@ -8,7 +8,7 @@ var (
 )
 
 const (
-	addr      = "localhost:6379"
+	addr      = "121.37.143.160:6379"
 	pass_word = ""
 	db        = 0
 	shop_key  = "SHOP_STATUS"
