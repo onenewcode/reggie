@@ -11,7 +11,7 @@ type dishI interface {
 	Delete(id int64) *error
 	Update(dish *model.Dish)
 	UpdateStatus(cat *model.Dish)
-	List(tp *int64) *[]model.Dish
+	List(d *model.Dish) (*[]model.Dish, error)
 	GetById(id int64) *model.Dish
 	Save(dish *model.Dish) *model.Dish
 }
@@ -61,10 +61,25 @@ func (*dishDao) UpdateStatus(cat *model.Dish) {
 }
 
 // 根据菜品分类查询菜品
-func (*dishDao) List(tp *int64) *[]model.Dish {
-	var dish []model.Dish
-	DBEngine.Where("category_id=?", tp).Find(&dish)
-	return &dish
+func (*dishDao) List(d *model.Dish) (*[]model.Dish, error) {
+	var (
+		dish []model.Dish
+	)
+	origin_sql := DBEngine
+	// 判断是否含有name，有name不为nil，就进行模糊查询。
+	if d.Name != "" {
+		origin_sql = origin_sql.Where("name LIKE ?", "%"+d.Name+"%")
+	}
+	if d.CategoryID != 0 {
+		origin_sql = origin_sql.Where("categoryId=?", d.CategoryID)
+	}
+	if d.Status != 3 {
+		origin_sql = origin_sql.Where("status =?", d.Status)
+	}
+	if err := origin_sql.Order("create_time desc").Find(&dish).Error; err != nil {
+		return nil, err
+	}
+	return &dish, nil
 }
 func (*dishDao) GetById(id int64) *model.Dish {
 	var dish model.Dish

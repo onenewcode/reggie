@@ -5,11 +5,12 @@ package status_c
  */
 const (
 	//启用
-	ENABLE = 1
+	ENABLE int32 = 1
 
 	//禁用
-	DISABLE = 0
+	DISABLE int32 = 0
 
 	//设置新用户的默认密码
 	DEFAULT_PASSWORD = "123456"
+	//启用
 )

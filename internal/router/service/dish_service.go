@@ -64,7 +64,15 @@ func StartOrStopDish(status int32, id int64, update_user int64) {
 	db.DisDao.UpdateStatus(&cat)
 }
 func ListDish(tp *int64) *[]model.Dish {
-	return db.DisDao.List(tp)
+	d := model.Dish{
+		CategoryID: *tp,
+		Status:     status_c.ENABLE,
+	}
+	dl, err := db.DisDao.List(&d)
+	if err != nil {
+		hlog.Error(err)
+	}
+	return dl
 }
 func GetByIdWithFlavor(id int64) *vo.DishVO {
 	dvo := &vo.DishVO{}
@@ -72,8 +80,25 @@ func GetByIdWithFlavor(id int64) *vo.DishVO {
 	dish := db.DisDao.GetById(id)
 
 	//根据菜品id查询口味数据
-
 	dishFlavors := db.DishFDao.GetByDishId(id)
 	dvo.ForDishAndFlavor(dish, dishFlavors)
 	return dvo
+}
+
+// 条件查询菜品和口味
+func ListWithFlavorDish(d *model.Dish) *[]vo.DishVO {
+	di, err := db.DisDao.List(d)
+	di_l := len(*di)
+	if err != nil {
+		hlog.Error(err)
+	}
+	dvo := make([]vo.DishVO, 0, di_l)
+	// 进行转换
+	for i := 0; i < di_l; i++ {
+		dish_f := db.DishFDao.GetByDishId((*di)[i].ID)
+		dishVo := vo.Dish2DishVO(&(*di)[i])
+		dishVo.Flavors = dish_f
+		dvo = append(dvo, *dishVo)
+	}
+	return &dvo
 }
