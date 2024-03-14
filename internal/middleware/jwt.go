@@ -27,7 +27,8 @@ const (
 	// - "cookie:<name>"
 	// - "param:<name>"
 	// - "form:<name>"
-	JwtToken = "header: token"
+	JwtTokenAdmin = "header: token"
+	JwtTokenUSer  = "header: authorization"
 )
 
 // 从jwt获取雇员id
@@ -128,13 +129,13 @@ func InitJwtAdmin() *jwt.HertzJWTMiddleware {
 			c.JSON(code, common.Result{1, "", nil})
 		},
 		// 设置从哪里获取jwt的信息
-		TokenLookup: JwtToken,
+		TokenLookup: JwtTokenAdmin,
 		// 不设置jwt表名前缀
 		WithoutDefaultTokenHeadName: true,
 		//  当用户未通过身份验证或授权时，调用此函数返回错误信息
 		Unauthorized: func(ctx context.Context, c *app.RequestContext, code int, message string) {
-			// 不通过，响应401状态码
-			c.String(http.StatusNotFound, message)
+			//重定向
+			c.Redirect(http.StatusFound, []byte("/admin/employee/login"))
 		},
 	})
 	if err != nil {
@@ -159,7 +160,8 @@ func jwtIdentityHandlerUser(ctx context.Context, c *app.RequestContext) interfac
 
 // 生成jwt负载的函数，指定了Authenticator方法生成的数据如何存储和怎么样存储c.Get("JWT_PAYLOAD")访问
 func jwtPayloadFuncUser(data interface{}) jwt.MapClaims {
-	if v, ok := data.(*vo.UserLoginVO); ok {
+	v, ok := data.(*vo.UserLoginVO)
+	if ok {
 		return jwt.MapClaims{
 			IdentityKey: v,
 		}
@@ -169,16 +171,19 @@ func jwtPayloadFuncUser(data interface{}) jwt.MapClaims {
 
 func jwtLoginResponseUser(ctx context.Context, c *app.RequestContext, code int, token string, expire time.Time) {
 	var us, _ = c.Get(IdentityKey)
-	rely := us.(*vo.UserLoginVO)
+	rely := us.(vo.UserLoginVO)
 	rely.Token = token
 	c.JSON(http.StatusOK, common.Result{1, "", rely})
 }
 
 // 返回值会被存在Claim数组中
 func jwtAuthenticatorUser(ctx context.Context, c *app.RequestContext) (interface{}, error) {
-	var ul = &vo.UserLoginVO{}
+	var ul = vo.UserLoginVO{}
 	var userLoginDto dto.UserLoginDTO
-	c.Bind(&userLoginDto)
+	err := c.Bind(&userLoginDto)
+	if err != nil {
+		return nil, err
+	}
 	hlog.Info("微信用户登录：{}", userLoginDto)
 	us := service.WxLoginUser(&userLoginDto)
 	ul.User2UserLoginVO(us)
@@ -209,7 +214,7 @@ func InitJwtUser() *jwt.HertzJWTMiddleware {
 			c.JSON(code, common.Result{1, "", nil})
 		},
 		// 设置从哪里获取jwt的信息
-		TokenLookup: JwtToken,
+		TokenLookup: JwtTokenUSer,
 		// 不设置jwt表名前缀
 		WithoutDefaultTokenHeadName: true,
 		//  当用户未通过身份验证或授权时，调用此函数返回错误信息

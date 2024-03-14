@@ -26,3 +26,13 @@ type SetmealVO struct {
 	UpdateTime    time.Time           `gorm:"column:update_time;comment:更新时间" json:"update_time"`            // 更新时间
 	SetmealDishes []model.SetmealDish `gorm:"foreignKey:setmeal_id"`
 }
+type UserLoginVO struct {
+	Id     int64  `json:"id,omitempty"`
+	Openid string `json:"openid,omitempty"`
+	Token  string `json:"token,omitempty"`
+}
+
+func (ul *UserLoginVO) User2UserLoginVO(u *model.User) {
+	ul.Id = (*u).ID
+	ul.Openid = (*u).Openid
+}

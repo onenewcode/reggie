@@ -87,3 +87,6 @@ func StartOrStopMeal(status int32, id int64, update_user int64) {
 	//.build();
 	//setmealMapper.update(setmeal);
 }
+func ListSetmeal(meal *model.Setmeal) *[]model.Setmeal {
+	return db.MealDao.List(meal)
+}

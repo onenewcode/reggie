@@ -51,6 +51,11 @@ func (*categoryDao) UpdateStatus(cat *model.Category) {
 }
 func (*categoryDao) List(tp *int64) *[]model.Category {
 	var cat []model.Category
-	DBEngine.Where("type=?", tp).Find(&cat)
+	if *tp == 0 {
+		DBEngine.Find(&cat)
+	} else {
+		DBEngine.Where("type=?", tp).Find(&cat)
+	}
+
 	return &cat
 }

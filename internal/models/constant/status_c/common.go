@@ -9,7 +9,7 @@ const (
 
 	//禁用
 	DISABLE int32 = 0
-
+	ALL     int32 = 3
 	//设置新用户的默认密码
 	DEFAULT_PASSWORD = "123456"
 	//启用

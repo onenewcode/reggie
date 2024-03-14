@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"reggie/internal/models/constant/status_c"
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 	"reggie/internal/models/vo"
@@ -84,6 +85,9 @@ func (m *mealDao) List(ml *model.Setmeal) *[]model.Setmeal {
 	}
 	if ml.CategoryID != 0 {
 		origin_sql = origin_sql.Where("categoryId=?", ml.CategoryID)
+	}
+	if ml.Status != status_c.ALL {
+		origin_sql = origin_sql.Where("status=?", ml.Status)
 	}
 	origin_sql.Model(&model.Category{}).Count(&count)
 	origin_sql.Find(&cat)

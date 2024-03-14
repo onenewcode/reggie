@@ -66,7 +66,7 @@ type DishPageQueryDTO struct {
  * C端用户登录
  */
 type UserLoginDTO struct {
-	Code string `json:"code,omitempty"`
+	Code string `json:"code,required"`
 }
 
 // userDto转换成user，更新用户时间
