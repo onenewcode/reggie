@@ -16,6 +16,7 @@ type RedisClient interface {
 	GetStatus() *int
 	GetListDishVO(categoryId string) (*[]vo.DishVO, error)
 	SetListDishVO(categoryId string, dvo *[]vo.DishVO) error
+	ClearCacheDishByCategoryId(categoryId string)
 }
 type redisClient struct {
 }
@@ -35,16 +36,16 @@ func (*redisClient) GetStatus() *int {
 
 // 获取失败直接返回nil
 func (*redisClient) GetListDishVO(categoryId string) (*[]vo.DishVO, error) {
-	var dvo *[]vo.DishVO
+	var dvo []vo.DishVO
 	b, err := rc.Get(context.Background(), dish_vo+categoryId).Bytes()
 	if err != nil {
 		return nil, err
 	}
-	if err = json.Unmarshal(b, dvo); err != nil {
+	if err = json.Unmarshal(b, &dvo); err != nil {
 		hlog.Error("redis 解析ListDishVO失败")
 		return nil, err
 	}
-	return dvo, nil
+	return &dvo, nil
 }
 func (*redisClient) SetListDishVO(categoryId string, dvo *[]vo.DishVO) error {
 	b, err := json.Marshal(dvo)
@@ -57,4 +58,7 @@ func (*redisClient) SetListDishVO(categoryId string, dvo *[]vo.DishVO) error {
 		return err
 	}
 	return nil
+}
+func (*redisClient) ClearCacheDishByCategoryId(categoryId string) {
+	rc.Del(context.Background(), dish_vo+categoryId)
 }

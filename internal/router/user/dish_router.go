@@ -21,7 +21,7 @@ func ListDish(ctx context.Context, c *app.RequestContext) {
 	//查询redis中是否存在菜品数据
 	list, err := redis.RC.GetListDishVO(c_id)
 	// redis有数据直接返回
-	if err != nil {
+	if err == nil {
 		c.JSON(http.StatusOK, common.Result{1, "", list})
 	}
 	// 无数据查询数据库

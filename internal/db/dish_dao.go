@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"reggie/internal/models/constant/status_c"
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 )
@@ -71,9 +72,9 @@ func (*dishDao) List(d *model.Dish) (*[]model.Dish, error) {
 		origin_sql = origin_sql.Where("name LIKE ?", "%"+d.Name+"%")
 	}
 	if d.CategoryID != 0 {
-		origin_sql = origin_sql.Where("categoryId=?", d.CategoryID)
+		origin_sql = origin_sql.Where("category_id=?", d.CategoryID)
 	}
-	if d.Status != 3 {
+	if d.Status != status_c.ALL {
 		origin_sql = origin_sql.Where("status =?", d.Status)
 	}
 	if err := origin_sql.Order("create_time desc").Find(&dish).Error; err != nil {

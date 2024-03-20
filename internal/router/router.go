@@ -95,20 +95,28 @@ func InitRouter(r *server.Hertz) {
 		shop.PUT("/:status", admin.SetStatusShop)
 		shop.GET("/status", admin.GetStatusShop)
 	}
+
 	users := r.Group("/user")
-	userJ := middleware.InitJwtUser()
+	user_jwt := middleware.InitJwtUser()
 	us := users.Group("/user")
-	us.POST("/login", userJ.LoginHandler)
-	users.Use(userJ.MiddlewareFunc())
-
-	uca := users.Group("/category")
+	us.POST("/login", user_jwt.LoginHandler)
+	users.Use(user_jwt.MiddlewareFunc())
+	u_category := users.Group("/category")
 	{
-		uca.GET("/list", user.ListCategory)
-
+		u_category.GET("/list", user.ListCategory)
 	}
-	ush := users.Group("/shop")
+	u_shop := users.Group("/shop")
 	{
-		ush.GET("/status", admin.GetStatusShop)
+		u_shop.GET("/status", admin.GetStatusShop)
 	}
-
+	u_dish := users.Group("/dish")
+	{
+		u_dish.GET("/list", user.ListDish)
+	}
+	u_shoppingCart := users.Group("/shoppingCart")
+	{
+		u_shoppingCart.POST("/add", user.AddShoppingCart)
+		u_shoppingCart.GET("/list", user.ListShoppingCart)
+		u_shoppingCart.DELETE("/clean", user.CleanShoppingCart)
+	}
 }

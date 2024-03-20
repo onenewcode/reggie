@@ -9,11 +9,14 @@ import (
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 	"reggie/internal/models/vo"
+	"reggie/pkg/redis"
+	"strconv"
 	"time"
 )
 
 // 第一个参数菜品，第二个参数菜品口味数组
 func SaveWithFlavorDish(dish *model.Dish, flavors *[]model.DishFlavor) *model.Dish {
+	redis.RC.ClearCacheDishByCategoryId(strconv.FormatInt((*dish).CategoryID, 10))
 	db.DisDao.Save(dish)
 	for _, v := range *flavors {
 		v.DishID = dish.ID
@@ -43,6 +46,7 @@ func DeleteDish(ids *[]int64) *error {
 		hlog.Error(message_c.DISH_BE_RELATED_BY_SETMEAL)
 		return nil
 	}
+	redis.RC.ClearCacheDishByCategoryId("*")
 	//删除菜品表中的菜品数据
 	for i := 0; i < len(*ids); i++ {
 		db.DisDao.Delete((*ids)[i])
@@ -52,6 +56,7 @@ func DeleteDish(ids *[]int64) *error {
 	return nil
 }
 func UpdateDish(dish *model.Dish) {
+	redis.RC.ClearCacheDishByCategoryId("*")
 	db.DisDao.Update(dish)
 }
 func StartOrStopDish(status int32, id int64, update_user int64) {

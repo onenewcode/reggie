@@ -34,8 +34,7 @@ func (dv *DishVO) ForDishAndFlavor(d *model.Dish, f *[]model.DishFlavor) {
 }
 func Dish2DishVO(d *model.Dish) *DishVO {
 	var dv DishVO
-	d.ID, d.Name, d.CategoryID, d.Price, d.Image, d.Description, d.Status, d.UpdateTime =
-		dv.Id, dv.Name, dv.CategoryId, dv.Price, dv.Image, dv.Description, dv.Status, dv.UpdateTime
+	dv.Id, dv.Name, dv.CategoryId, dv.Price, dv.Image, dv.Description, dv.Status, dv.UpdateTime = d.ID, d.Name, d.CategoryID, d.Price, d.Image, d.Description, d.Status, d.UpdateTime
 	return &dv
 }
 

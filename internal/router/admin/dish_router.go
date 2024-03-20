@@ -10,6 +10,7 @@ import (
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
 	"reggie/internal/router/service"
+	"reggie/pkg/redis"
 	"strconv"
 	"strings"
 	"time"
@@ -70,6 +71,7 @@ func UpdateDish(ctx context.Context, c *app.RequestContext) {
 
 func StartOrStopDish(ctx context.Context, c *app.RequestContext) {
 	status, id := c.Param("status"), c.Query("id")
+	redis.RC.ClearCacheDishByCategoryId("*")
 	log.Printf("启用禁用菜品分类：{%s},{%s}", status, id)
 	status_r, _ := strconv.ParseInt(status, 10, 32)
 	id_r, _ := strconv.ParseInt(id, 10, 64)
