@@ -119,4 +119,14 @@ func InitRouter(r *server.Hertz) {
 		u_shoppingCart.GET("/list", user.ListShoppingCart)
 		u_shoppingCart.DELETE("/clean", user.CleanShoppingCart)
 	}
+	u_address := users.Group("/addressBook")
+	{
+		u_address.GET("/list", user.ListAddress)
+		u_address.POST("", user.SaveAddress)
+		u_address.GET("/:id", user.GetByIdAddress)
+		u_address.PUT("", user.UpdateAddress)
+		u_address.PUT("/default", user.SetDefaultAddress)
+		u_address.DELETE("", user.DeleteByIdAddress)
+		u_address.GET("/default", user.GetDefaultAddress)
+	}
 }
