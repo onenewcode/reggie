@@ -121,3 +121,17 @@ type SetmealPageQueryDTO struct {
 	//状态 0表示禁用 1表示启用
 	Status *int `json:"status,omitempty" form:"status,omitempty"`
 }
+
+/*
+添加分页id
+*/
+type OrderPageQueryDTO struct {
+	Page      int       `json:"page,omitempty"`
+	PageSize  int       `json:"pageSize,omitempty"`
+	Number    string    `json:"number,omitempty"`
+	Phone     string    `json:"phone,omitempty"`
+	Status    int32     `json:"status,omitempty"`
+	BeginTime time.Time `json:"beginTime" format:"2006-01-02 15:04:05" `
+	EndTime   time.Time `json:"endTime" format:"2006-01-02 15:04:05"`
+	UserId    int64     `json:"userId,omitempty"`
+}
