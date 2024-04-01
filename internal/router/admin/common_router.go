@@ -11,6 +11,7 @@ import (
 )
 
 func getFile(from *multipart.Form) *multipart.FileHeader {
+	// 获取文件对应的文件头
 	fileH := from.File["file"][0]
 	return fileH
 }
