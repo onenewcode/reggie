@@ -10,6 +10,7 @@ import (
 	"strconv"
 )
 
+// @Summary 设置店铺的营业状态
 func SetStatusShop(ctx context.Context, c *app.RequestContext) {
 	s := c.Param("status")
 	status, _ := strconv.Atoi(s)
@@ -24,6 +25,7 @@ func SetStatusShop(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
 
+// @Summary 获取店铺的营业状态
 func GetStatusShop(ctx context.Context, c *app.RequestContext) {
 	status := *service.GetStatusShop()
 	var statusString string

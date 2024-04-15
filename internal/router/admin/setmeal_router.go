@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-// 套餐管理接机口
+// @Summary 套餐管理接机口
 func SaveSetMealWithDish(ctx context.Context, c *app.RequestContext) {
 	var setD dto.SetmealDTO
 	// 参数绑定转化为结构体
@@ -33,6 +33,7 @@ func SaveSetMealWithDish(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
 
+// @Summary 分页查询
 func PageSetMeal(ctx context.Context, c *app.RequestContext) {
 	var page dto.SetmealPageQueryDTO
 	// 参数绑定转化为结构体
@@ -43,6 +44,7 @@ func PageSetMeal(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", service.PageQuerySetMeal(&page)})
 }
 
+// @Summary 批量删除套餐批量删除套餐
 func DeleteBatchMeal(ctx context.Context, c *app.RequestContext) {
 	id := c.Query("ids")
 	nums := make([]int64, 0, 5)
@@ -62,6 +64,7 @@ func DeleteBatchMeal(ctx context.Context, c *app.RequestContext) {
 	}
 }
 
+// @Summary 根据id查询套餐
 func GetByIDDishMeal(ctx context.Context, c *app.RequestContext) {
 	id := c.Param("id")
 	log.Printf("查询菜单：{%s}", id)
@@ -74,6 +77,8 @@ func GetByIDDishMeal(ctx context.Context, c *app.RequestContext) {
 	}
 
 }
+
+// @Summary 修改套餐
 func UpdateMeal(ctx context.Context, c *app.RequestContext) {
 	var meal_t dto.SetmealDTO
 	c.Bind(&meal_t)
