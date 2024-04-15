@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// @Summary 新增菜品
 func SaveDish(ctx context.Context, c *app.RequestContext) {
 	var dist dto.DishDTO
 	c.Bind(&dist)
@@ -26,6 +27,7 @@ func SaveDish(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
 
+// @Summary 分页查询
 func PageDish(ctx context.Context, c *app.RequestContext) {
 	var dishPage dto.DishPageQueryDTO
 	c.Bind(&dishPage)
@@ -34,6 +36,7 @@ func PageDish(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", cat})
 }
 
+// @Summary 批量删除菜品
 func DeleteDish(ctx context.Context, c *app.RequestContext) {
 	id := c.Query("ids")
 	nums := make([]int64, 0, 5)
@@ -52,6 +55,8 @@ func DeleteDish(ctx context.Context, c *app.RequestContext) {
 		c.JSON(http.StatusOK, common.Result{1, "", nil})
 	}
 }
+
+// @Summary 根据id查询菜品
 func GetByIdDish(ctx context.Context, c *app.RequestContext) {
 	id := c.Param("id")
 	log.Printf("查询菜品：{%s}", id)
@@ -59,6 +64,8 @@ func GetByIdDish(ctx context.Context, c *app.RequestContext) {
 	emp := service.GetByIdWithFlavor(id_r)
 	c.JSON(http.StatusOK, common.Result{1, "", emp})
 }
+
+// @Summary 更新菜品
 func UpdateDish(ctx context.Context, c *app.RequestContext) {
 	var dish model.Dish
 	c.Bind(&dish)
@@ -69,6 +76,7 @@ func UpdateDish(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
 
+// @Summary 菜品启停售
 func StartOrStopDish(ctx context.Context, c *app.RequestContext) {
 	status, id := c.Param("status"), c.Query("id")
 	redis.RC.ClearCacheDishByCategoryId("*")
@@ -79,7 +87,7 @@ func StartOrStopDish(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
 
-// 根据类型查询分类
+// @Summary 根据类型查询分类
 func ListDish(ctx context.Context, c *app.RequestContext) {
 	ty_pe := c.Query("categoryId")
 	log.Printf("按照类型查询菜品：{%s}", ty_pe)
@@ -87,3 +95,12 @@ func ListDish(ctx context.Context, c *app.RequestContext) {
 	dish := service.ListDish(&tp)
 	c.JSON(http.StatusOK, common.Result{1, "", dish})
 }
+
+/**
+ * 清理缓存数据
+ * @param pattern
+ */
+//private void cleanCache(String pattern){
+//Set keys = redisTemplate.keys(pattern);
+//redisTemplate.delete(keys);
+//}

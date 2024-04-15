@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"mime/multipart"
 	"net/http"
 	"reggie/internal/models/common"
@@ -10,6 +11,7 @@ import (
 	"reggie/pkg/obs"
 )
 
+// over
 func getFile(from *multipart.Form) *multipart.FileHeader {
 	// 获取文件对应的文件头
 	fileH := from.File["file"][0]
@@ -17,6 +19,7 @@ func getFile(from *multipart.Form) *multipart.FileHeader {
 }
 func UploadImg(ctx context.Context, c *app.RequestContext) {
 	form, err := c.MultipartForm()
+	hlog.Info("文件上传：{ %s}", form)
 	if err != nil {
 		c.JSON(http.StatusOK, common.Result{0, message_c.UPLOAD_FAILED, nil})
 	}
