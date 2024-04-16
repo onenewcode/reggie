@@ -62,7 +62,7 @@ func SubmitOrder(order *model.Order) (*vo.OrderSubmitVO, error) {
 	return &orderSubmitVO, nil
 }
 
-func PageQuery4UserOrder(page *dto.OrderPageQueryDTO) (common.PageResult, error) {
+func PageQuery4UserOrder(page *dto.OrdersPageQueryDTO) (common.PageResult, error) {
 	// 分页条件查询
 	query, err := db.OrderDao.PageQuery(page)
 	if err != nil {
@@ -82,4 +82,7 @@ func PageQuery4UserOrder(page *dto.OrderPageQueryDTO) (common.PageResult, error)
 	}
 
 	return common.PageResult{int64(l), list}, nil
+}
+func ConditionSearchOrder() {
+
 }
