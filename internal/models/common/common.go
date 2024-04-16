@@ -38,6 +38,6 @@ func (t *DateTime) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	*t = (DateTime)(parse)
+	t = (*DateTime)(&parse)
 	return err
 }
