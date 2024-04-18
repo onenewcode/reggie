@@ -8,7 +8,7 @@ import (
 
 type orderI interface {
 	Insert(order *model.Order) (*model.Order, error)
-	PageQuery(page *dto.OrderPageQueryDTO) (*[]model.Order, error)
+	PageQuery(page *dto.OrdersPageQueryDTO) (*[]model.Order, int64, error)
 }
 type orderDao struct {
 }
@@ -21,10 +21,10 @@ func (*orderDao) Insert(order *model.Order) (*model.Order, error) {
 		return order, nil
 	}
 }
-func (*orderDao) PageQuery(page *dto.OrderPageQueryDTO) (*[]model.Order, error) {
+func (*orderDao) PageQuery(page *dto.OrdersPageQueryDTO) (*[]model.Order, int64, error) {
 	var (
 		order []model.Order
-		//count int64
+		count int64
 	)
 	origin_sql := DBEngine
 	// 判断是否含有name，有name不为nil，就进行模糊查询。
@@ -46,7 +46,7 @@ func (*orderDao) PageQuery(page *dto.OrderPageQueryDTO) (*[]model.Order, error) 
 	if page.EndTime.Equal(time.Time{}) {
 		origin_sql = origin_sql.Where("endTime  =?", page.EndTime)
 	}
-	//origin_sql.Model(&model.Category{}).Count(&count)
+	origin_sql.Model(&model.Category{}).Count(&count)
 	origin_sql.Find(&order)
-	return &order, nil
+	return &order, count, nil
 }

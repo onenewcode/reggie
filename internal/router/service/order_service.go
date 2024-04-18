@@ -64,7 +64,7 @@ func SubmitOrder(order *model.Order) (*vo.OrderSubmitVO, error) {
 
 func PageQuery4UserOrder(page *dto.OrdersPageQueryDTO) (common.PageResult, error) {
 	// 分页条件查询
-	query, err := db.OrderDao.PageQuery(page)
+	query, count, err := db.OrderDao.PageQuery(page)
 	if err != nil {
 		return common.PageResult{}, err
 	}
@@ -81,8 +81,25 @@ func PageQuery4UserOrder(page *dto.OrdersPageQueryDTO) (common.PageResult, error
 		}
 	}
 
-	return common.PageResult{int64(l), list}, nil
+	return common.PageResult{count, list}, nil
 }
-func ConditionSearchOrder() {
-
+func ConditionSearchOrder(oq *dto.OrdersPageQueryDTO) (common.PageResult, error) {
+	// 分页条件查询
+	query, count, err := db.OrderDao.PageQuery(oq)
+	if err != nil {
+		return common.PageResult{}, err
+	}
+	list := make([]vo.OrderVO, 0, 10)
+	// 查询出订单明细，并封装入OrderVO进行响应
+	l := len(*query)
+	if l > 0 {
+		for i := 0; i < l; i++ {
+			orderDetails := db.OrderDetailDao.GetByOrderId((*query)[i].UserID)
+			orderVO := vo.OrderVO{}
+			copier.Copy(&orderVO, orderDetails)
+			orderVO.OrderDetailList = orderDetails
+			list[i] = orderVO
+		}
+	}
+	return common.PageResult{count, list}, nil
 }
