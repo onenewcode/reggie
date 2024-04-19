@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"reggie/internal/models/common"
 	"reggie/internal/router/service"
-	"strconv"
 	"time"
 )
 
@@ -27,19 +26,10 @@ func OrderOverView(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", service.GetOrderOverView()})
 }
 
-// @Summary 设置店铺的营业状态
+// @Summary 查询菜品总览
 func DishOverView(ctx context.Context, c *app.RequestContext) {
-	s := c.Param("status")
-	status, _ := strconv.Atoi(s)
-	var statusString string
-	if status == 1 {
-		statusString = "营业中"
-	} else {
-		statusString = "打烊中"
-	}
-	hlog.Infof("设置店铺的营业状态为：", statusString)
-	service.SetStatusShop(&status)
-	c.JSON(http.StatusOK, common.Result{1, "", nil})
+
+	c.JSON(http.StatusOK, common.Result{1, "", service.GetDishOverView()})
 }
 
 // @Summary 获取店铺的营业状态

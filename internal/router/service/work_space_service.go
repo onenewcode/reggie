@@ -75,3 +75,16 @@ func GetOrderOverView() vo.OrderOverViewVO {
 		AllOrders:       allOrders,
 	}
 }
+func GetDishOverView() vo.DishOverViewVO {
+	m := make(map[string]interface{})
+	m["status"] = status_c.ENABLE
+	sold := db.OrderDao.CountByMap(m)
+
+	m["status"] = status_c.DISABLE
+	discontinued := db.OrderDao.CountByMap(m)
+
+	return vo.DishOverViewVO{
+		Sold:         sold,
+		Discontinued: discontinued,
+	}
+}
