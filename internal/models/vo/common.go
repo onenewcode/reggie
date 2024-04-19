@@ -5,6 +5,36 @@ import (
 	"time"
 )
 
+type BusinessDataVO struct {
+	Turnover float64 `json:"turnover,omitempty"` //营业额
+
+	ValidOrderCount int64 `json:"valid_order_count,omitempty"` //有效订单数
+
+	OrderCompletionRate float64 `json:"order_completion_rate,omitempty"` //订单完成率
+
+	UnitPrice float64 `json:"unit_price,omitempty"` //平均客单价
+
+	NewUsers int64 `json:"new_users,omitempty"` //新增用户数
+
+}
+type OrderOverViewVO struct {
+
+	//待接单数量
+	WaitingOrders int64 `json:"waiting_orders,omitempty"`
+
+	//待派送数量
+	DeliveredOrders int64 `json:"delivered_orders,omitempty"`
+
+	//已完成数量
+	CompletedOrders int64 `json:"completed_orders,omitempty"`
+
+	//已取消数量
+	CancelledOrders int64 `json:"cancelled_orders,omitempty"`
+
+	//全部订单
+	AllOrders int64 `json:"all_orders,omitempty"`
+}
+
 type EmployeeLoginVO struct {
 	Id int64 `json:"id,omitempty"`
 

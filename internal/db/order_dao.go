@@ -9,6 +9,8 @@ import (
 type orderI interface {
 	Insert(order *model.Order) (*model.Order, error)
 	PageQuery(page *dto.OrdersPageQueryDTO) (*[]model.Order, int64, error)
+	CountByMap(m map[string]interface{}) int64
+	SumByMap(m map[string]interface{}) float64
 }
 type orderDao struct {
 }
@@ -49,4 +51,36 @@ func (*orderDao) PageQuery(page *dto.OrdersPageQueryDTO) (*[]model.Order, int64,
 	origin_sql.Model(&model.Category{}).Count(&count)
 	origin_sql.Find(&order)
 	return &order, count, nil
+}
+func (*orderDao) CountByMap(m map[string]interface{}) int64 {
+	var nums int64
+	origin_sql := DBEngine
+	// 判断是否含有name，有name不为nil，就进行模糊查询。
+	if m["begin"] != nil {
+		origin_sql = origin_sql.Where(" order_time >?", m["begin"])
+	}
+	if m["end"] != nil {
+		origin_sql = origin_sql.Where(" order_time <?", m["end"])
+	}
+	if m["status"] != nil {
+		origin_sql = origin_sql.Where("status=?", m["status"])
+	}
+	origin_sql.Table(model.TableNameOrder).Count(&nums)
+	return nums
+}
+func (*orderDao) SumByMap(m map[string]interface{}) float64 {
+	var nums float64
+	origin_sql := DBEngine
+	// 判断是否含有name，有name不为nil，就进行模糊查询。
+	if m["begin"] != nil {
+		origin_sql = origin_sql.Where(" order_time >?", m["begin"])
+	}
+	if m["end"] != nil {
+		origin_sql = origin_sql.Where(" order_time <?", m["end"])
+	}
+	if m["status"] != nil {
+		origin_sql = origin_sql.Where("status=?", m["status"])
+	}
+	origin_sql.Table(model.TableNameOrder).Select("SUM(price)").Scan(&nums)
+	return nums
 }
