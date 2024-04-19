@@ -15,6 +15,8 @@ import (
 	"strings"
 )
 
+// over
+
 // @Summary 套餐管理接机口
 func SaveSetMealWithDish(ctx context.Context, c *app.RequestContext) {
 	var setD dto.SetmealDTO
@@ -90,12 +92,12 @@ func UpdateMeal(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
 
-// 待完善
+// @Summary 套餐起售停售
 func StartOrStopMeal(ctx context.Context, c *app.RequestContext) {
 	status, id := c.Param("status"), c.Query("id")
 	log.Printf("启用禁用套餐分类：{%s},{%s}", status, id)
 	status_r, _ := strconv.ParseInt(status, 10, 32)
 	id_r, _ := strconv.ParseInt(id, 10, 64)
-	service.StartOrStopMeal(int32(status_r), id_r, middleware.GetJwtPayload(c))
+	service.StartOrStopMeal(int32(status_r), id_r)
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }

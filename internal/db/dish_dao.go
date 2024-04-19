@@ -15,6 +15,7 @@ type dishI interface {
 	List(d *model.Dish) (*[]model.Dish, error)
 	GetById(id int64) *model.Dish
 	Save(dish *model.Dish) *model.Dish
+	GetBySetmealId(id int64) []*model.Dish
 }
 type dishDao struct {
 }
@@ -86,4 +87,9 @@ func (*dishDao) GetById(id int64) *model.Dish {
 	var dish model.Dish
 	DBEngine.Where("id=?", id).First(&dish)
 	return &dish
+}
+func (*dishDao) GetBySetmealId(id int64) []*model.Dish {
+	var list []*model.Dish
+	DBEngine.Joins(model.TableNameSetmealDish, DBEngine.Where(&model.SetmealDish{SetmealID: id})).Find(&list)
+	return list
 }

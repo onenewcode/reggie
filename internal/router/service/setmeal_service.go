@@ -1,9 +1,11 @@
 package service
 
 import (
+	"errors"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"reggie/internal/db"
 	"reggie/internal/models/common"
+	"reggie/internal/models/constant/message_c"
 	"reggie/internal/models/constant/status_c"
 	"reggie/internal/models/dto"
 	"reggie/internal/models/model"
@@ -67,25 +69,22 @@ func UpdateMeal(meal *model.Setmeal, dish *[]model.SetmealDish) {
 	}
 	db.MealDishDao.InsertBatch(dish)
 }
-func StartOrStopMeal(status int32, id int64, update_user int64) {
+func StartOrStopMeal(status int32, id int64) error {
 	//起售套餐时，判断套餐内是否有停售菜品，有停售菜品提示"套餐内包含未启售菜品，无法启售"
-	//if (status == status_c.ENABLE) {
-	//select a.* from dish a left join setmeal_dish b on a.id = b.dish_id where b.setmeal_id = ?
-	//	List<Dish> dishList = dishMapper.getBySetmealId(id);
-	//	if (dishList != null && dishList.size() > 0) {
-	//		dishList.forEach(dish -> {
-	//			if (StatusConstant.DISABLE == dish.getStatus()) {
-	//				throw new SetmealEnableFailedException(MessageConstant.SETMEAL_ENABLE_FAILED);
-	//			}
-	//		});
-	//	}
-	//}
-	//
-	//Setmeal setmeal = Setmeal.builder()
-	//.id(id)
-	//.status(status)
-	//.build();
-	//setmealMapper.update(setmeal);
+	if status == status_c.ENABLE {
+		//select a.* from dish a left join setmeal_dish b on a.id = b.dish_id where b.setmeal_id = ?
+		dishList := db.DisDao.GetBySetmealId(id)
+		if dishList != nil && len(dishList) > 0 {
+			for _, item := range dishList {
+				if status_c.DISABLE == item.Status {
+					return errors.New(message_c.SETMEAL_ENABLE_FAILED)
+				}
+			}
+		}
+	}
+	setmeal := model.Setmeal{ID: id, Status: status}
+	db.MealDao.Update(&setmeal)
+	return nil
 }
 func ListSetmeal(meal *model.Setmeal) *[]model.Setmeal {
 	return db.MealDao.List(meal)
