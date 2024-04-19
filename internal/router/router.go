@@ -95,6 +95,13 @@ func InitRouter(r *server.Hertz) {
 		shop.PUT("/:status", admin.SetStatusShop)
 		shop.GET("/status", admin.GetStatusShop)
 	}
+	workspace := adm.Group("/workspace")
+	{
+		workspace.GET("/businessData", admin.BusinessData)
+		workspace.GET("/overviewOrders", admin.OrderOverView)
+		workspace.GET("/overviewDishes", admin.DishOverView)
+		workspace.GET("/overviewSetmeals", admin.SetmealOverView)
+	}
 
 	users := r.Group("/user")
 	user_jwt := middleware.InitJwtUser()
