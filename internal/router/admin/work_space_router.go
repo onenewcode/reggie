@@ -3,7 +3,6 @@ package admin
 import (
 	"context"
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"net/http"
 	"reggie/internal/models/common"
 	"reggie/internal/router/service"
@@ -32,15 +31,7 @@ func DishOverView(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", service.GetDishOverView()})
 }
 
-// @Summary 获取店铺的营业状态
+// @Summary 查询套餐总览
 func SetmealOverView(ctx context.Context, c *app.RequestContext) {
-	status := *service.GetStatusShop()
-	var statusString string
-	if status == 1 {
-		statusString = "营业中"
-	} else {
-		statusString = "打烊中"
-	}
-	hlog.Infof("获取到店铺的营业状态为：{}", statusString)
-	c.JSON(http.StatusOK, common.Result{1, "", status})
+	c.JSON(http.StatusOK, common.Result{1, "", service.GetSetmealOverView()})
 }

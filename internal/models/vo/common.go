@@ -52,6 +52,14 @@ type DishOverViewVO struct {
 	// 已停售数量
 	Discontinued int64 `json:"discontinued,omitempty"`
 }
+type SetmealOverViewVO struct {
+
+	// 已启售数量
+	Sold int64 `json:"sold,omitempty"`
+
+	// 已停售数量
+	Discontinued int64 `json:"discontinued,omitempty"`
+}
 
 type SetmealVO struct {
 	ID            int64               `gorm:"column:id;primaryKey;autoIncrement:true;comment:主键" json:"id"`  // 主键

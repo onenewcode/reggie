@@ -88,3 +88,16 @@ func GetDishOverView() vo.DishOverViewVO {
 		Discontinued: discontinued,
 	}
 }
+func GetSetmealOverView() vo.SetmealOverViewVO {
+	m := make(map[string]interface{})
+	m["status"] = status_c.ENABLE
+	sold := db.OrderDao.CountByMap(m)
+
+	m["status"] = status_c.DISABLE
+	discontinued := db.OrderDao.CountByMap(m)
+
+	return vo.SetmealOverViewVO{
+		Sold:         sold,
+		Discontinued: discontinued,
+	}
+}
