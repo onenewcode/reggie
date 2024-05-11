@@ -1,10 +1,10 @@
 package service
 
 import (
+	"reggie/internal/dal/common"
+	"reggie/internal/dal/dto"
+	"reggie/internal/dal/model"
 	"reggie/internal/db"
-	"reggie/internal/models/common"
-	"reggie/internal/models/dto"
-	"reggie/internal/models/model"
 	"time"
 )
 

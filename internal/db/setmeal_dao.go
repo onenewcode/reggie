@@ -2,10 +2,10 @@ package db
 
 import (
 	"github.com/cloudwego/hertz/pkg/common/hlog"
-	"reggie/internal/models/constant/status_c"
-	"reggie/internal/models/dto"
-	"reggie/internal/models/model"
-	"reggie/internal/models/vo"
+	"reggie/internal/constant/status_c"
+	"reggie/internal/dal/dto"
+	"reggie/internal/dal/model"
+	"reggie/internal/dal/vo"
 )
 
 type mealI interface {

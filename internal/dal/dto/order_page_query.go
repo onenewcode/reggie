@@ -2,7 +2,7 @@ package dto
 
 import (
 	"encoding/json"
-	"reggie/internal/models/common"
+	"reggie/internal/dal/common"
 	"time"
 )
 

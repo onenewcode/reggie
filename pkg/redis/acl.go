@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
-	"reggie/internal/models/vo"
+	"reggie/internal/dal/vo"
 )
 
 const (

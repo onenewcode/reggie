@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/cloudwego/hertz/pkg/app"
 	"net/http"
-	"reggie/internal/models/common"
+	"reggie/internal/dal/common"
 	"reggie/internal/router/service"
 	"time"
 )

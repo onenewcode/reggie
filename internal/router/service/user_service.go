@@ -2,10 +2,10 @@ package service
 
 import (
 	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"reggie/internal/constant/message_c"
+	"reggie/internal/dal/dto"
+	"reggie/internal/dal/model"
 	"reggie/internal/db"
-	"reggie/internal/models/constant/message_c"
-	"reggie/internal/models/dto"
-	"reggie/internal/models/model"
 	"reggie/pkg/wx"
 )
 

@@ -6,8 +6,8 @@ import (
 	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"mime/multipart"
 	"net/http"
-	"reggie/internal/models/common"
-	"reggie/internal/models/constant/message_c"
+	"reggie/internal/constant/message_c"
+	"reggie/internal/dal/common"
 	"reggie/pkg/obs"
 )
 

@@ -3,17 +3,17 @@ package service
 import (
 	"errors"
 	"github.com/jinzhu/copier"
+	"reggie/internal/constant/message_c"
+	"reggie/internal/dal/common"
+	"reggie/internal/dal/dto"
+	"reggie/internal/dal/model"
+	vo2 "reggie/internal/dal/vo"
 	"reggie/internal/db"
-	"reggie/internal/models/common"
-	"reggie/internal/models/constant/message_c"
-	"reggie/internal/models/dto"
-	"reggie/internal/models/model"
-	"reggie/internal/models/vo"
 	"strconv"
 	"time"
 )
 
-func SubmitOrder(order *model.Order) (*vo.OrderSubmitVO, error) {
+func SubmitOrder(order *model.Order) (*vo2.OrderSubmitVO, error) {
 	//1. 处理各种业务异常（地址簿为空、购物车数据为空）
 	addressBook := db.AddressDA0.GetById(order.AddressBookID)
 	if addressBook == nil {
@@ -54,7 +54,7 @@ func SubmitOrder(order *model.Order) (*vo.OrderSubmitVO, error) {
 	//4. 清空当前用户的购物车数据
 	db.ShopCartDao.DeleteByUserId(order.UserID)
 	//5. 封装VO返回结果
-	orderSubmitVO := vo.OrderSubmitVO{}
+	orderSubmitVO := vo2.OrderSubmitVO{}
 	err := copier.Copy(&orderSubmitVO, &order)
 	if err != nil {
 		return nil, errors.New("类型赋值错误")
@@ -68,13 +68,13 @@ func PageQuery4UserOrder(page *dto.OrdersPageQueryDTO) (common.PageResult, error
 	if err != nil {
 		return common.PageResult{}, err
 	}
-	list := make([]vo.OrderVO, 0, 10)
+	list := make([]vo2.OrderVO, 0, 10)
 	// 查询出订单明细，并封装入OrderVO进行响应
 	l := len(*query)
 	if l > 0 {
 		for i := 0; i < l; i++ {
 			orderDetails := db.OrderDetailDao.GetByOrderId((*query)[i].UserID)
-			orderVO := vo.OrderVO{}
+			orderVO := vo2.OrderVO{}
 			copier.Copy(&orderVO, orderDetails)
 			orderVO.OrderDetailList = orderDetails
 			list[i] = orderVO
@@ -89,13 +89,13 @@ func ConditionSearchOrder(oq *dto.OrdersPageQueryDTO) (common.PageResult, error)
 	if err != nil {
 		return common.PageResult{}, err
 	}
-	list := make([]vo.OrderVO, 0, 10)
+	list := make([]vo2.OrderVO, 0, 10)
 	// 查询出订单明细，并封装入OrderVO进行响应
 	l := len(*query)
 	if l > 0 {
 		for i := 0; i < l; i++ {
 			orderDetails := db.OrderDetailDao.GetByOrderId((*query)[i].UserID)
-			orderVO := vo.OrderVO{}
+			orderVO := vo2.OrderVO{}
 			copier.Copy(&orderVO, orderDetails)
 			orderVO.OrderDetailList = orderDetails
 			list[i] = orderVO

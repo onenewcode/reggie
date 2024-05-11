@@ -1,8 +1,8 @@
 package db
 
 import (
-	"reggie/internal/models/dto"
-	"reggie/internal/models/model"
+	"reggie/internal/dal/dto"
+	"reggie/internal/dal/model"
 )
 
 type catI interface {

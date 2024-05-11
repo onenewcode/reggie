@@ -2,9 +2,9 @@ package db
 
 import (
 	"github.com/cloudwego/hertz/pkg/common/hlog"
-	"reggie/internal/models/constant/status_c"
-	"reggie/internal/models/dto"
-	"reggie/internal/models/model"
+	"reggie/internal/constant/status_c"
+	"reggie/internal/dal/dto"
+	"reggie/internal/dal/model"
 )
 
 type dishI interface {

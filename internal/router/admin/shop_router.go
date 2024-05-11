@@ -5,7 +5,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"net/http"
-	"reggie/internal/models/common"
+	"reggie/internal/dal/common"
 	"reggie/internal/router/service"
 	"strconv"
 )

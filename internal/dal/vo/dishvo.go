@@ -2,7 +2,7 @@ package vo
 
 import (
 	"encoding/json"
-	"reggie/internal/models/model"
+	"reggie/internal/dal/model"
 	"time"
 )
 

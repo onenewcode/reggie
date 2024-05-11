@@ -5,10 +5,10 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"net/http"
+	"reggie/internal/constant/message_c"
+	"reggie/internal/dal/common"
+	"reggie/internal/dal/model"
 	"reggie/internal/middleware"
-	"reggie/internal/models/common"
-	"reggie/internal/models/constant/message_c"
-	"reggie/internal/models/model"
 	"reggie/internal/router/service"
 	"strconv"
 )

@@ -1,7 +1,7 @@
 package vo
 
 import (
-	"reggie/internal/models/model"
+	"reggie/internal/dal/model"
 	"time"
 )
 

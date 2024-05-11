@@ -5,9 +5,9 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"net/http"
+	"reggie/internal/dal/common"
+	"reggie/internal/dal/dto"
 	"reggie/internal/middleware"
-	"reggie/internal/models/common"
-	"reggie/internal/models/dto"
 	"reggie/internal/router/service"
 )
 

@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"reggie/internal/models/dto"
+	"reggie/internal/dal/dto"
 )
 
 type wxInterface interface {

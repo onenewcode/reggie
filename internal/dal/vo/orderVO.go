@@ -1,6 +1,6 @@
 package vo
 
-import "reggie/internal/models/model"
+import "reggie/internal/dal/model"
 
 type OrderVO struct {
 

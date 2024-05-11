@@ -1,6 +1,6 @@
 package dto
 
-import "reggie/internal/models/model"
+import "reggie/internal/dal/model"
 
 type ShoppingCartDTO struct {
 	DishId     int64  `json:"dishId,omitempty"`

@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/cloudwego/hertz/pkg/app"
 	"net/http"
-	"reggie/internal/models/common"
-	"reggie/internal/models/constant/message_c"
-	"reggie/internal/models/dto"
+	"reggie/internal/constant/message_c"
+	"reggie/internal/dal/common"
+	"reggie/internal/dal/dto"
 	"reggie/internal/router/service"
 )
 
