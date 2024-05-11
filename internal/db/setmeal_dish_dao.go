@@ -1,6 +1,6 @@
 package db
 
-import "reggie/internal/models/model"
+import "reggie/internal/dal/model"
 
 type meal_dishI interface {
 	GetSetmealIdsByDishIds(ids *[]int64) *[]int64

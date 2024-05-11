@@ -280,7 +280,7 @@ InitDB()函数负责初始化数据库链接，并把初始化后的链接放在
 ```go
 package db
 
-import "reggie/internal/models/model"
+import "reggie/internal/dal/model"
 
 type EmployeeDao struct {
 }
@@ -306,7 +306,7 @@ import (
 	"net/http"
 	"reggie/internal/db"
 	"reggie/internal/models/common"
-	"reggie/internal/models/model"
+	"reggie/internal/dal/model"
 )
 
 
@@ -484,7 +484,7 @@ import (
 
 	"reggie/internal/models/constant/message_c"
 	"reggie/internal/models/constant/status_c"
-	"reggie/internal/models/model"
+	"reggie/internal/dal/model"
 	"reggie/internal/models/vo"
 	"time"
 )

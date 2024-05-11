@@ -1,6 +1,6 @@
 package db
 
-import "reggie/internal/models/model"
+import "reggie/internal/dal/model"
 
 type userI interface {
 	GetByOpenid(op_id *string) *model.User

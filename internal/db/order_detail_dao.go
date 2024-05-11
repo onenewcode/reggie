@@ -1,6 +1,6 @@
 package db
 
-import "reggie/internal/models/model"
+import "reggie/internal/dal/model"
 
 type order_detialI interface {
 	InsertBatch(list *[]model.OrderDetail) error

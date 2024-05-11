@@ -1,8 +1,8 @@
 package service
 
 import (
+	"reggie/internal/dal/model"
 	"reggie/internal/db"
-	"reggie/internal/models/model"
 	"time"
 )
 

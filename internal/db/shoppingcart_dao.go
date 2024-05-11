@@ -1,7 +1,7 @@
 package db
 
 import (
-	"reggie/internal/models/model"
+	"reggie/internal/dal/model"
 )
 
 type shoppingcartI interface {

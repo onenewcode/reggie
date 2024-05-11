@@ -1,6 +1,6 @@
 package db
 
-import "reggie/internal/models/model"
+import "reggie/internal/dal/model"
 
 type dishFI interface {
 	InsertBatch(flavors *[]model.DishFlavor)

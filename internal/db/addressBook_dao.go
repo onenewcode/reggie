@@ -1,6 +1,6 @@
 package db
 
-import "reggie/internal/models/model"
+import "reggie/internal/dal/model"
 
 type addressI interface {
 	List(address *model.AddressBook) (*[]model.AddressBook, error)
