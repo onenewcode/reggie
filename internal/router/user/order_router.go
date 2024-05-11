@@ -5,9 +5,9 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"net/http"
 	"reggie/internal/dal/common"
+	"reggie/internal/dal/dto"
 	"reggie/internal/dal/model"
 	"reggie/internal/middleware"
-	"reggie/internal/models/dto"
 	"reggie/internal/router/service"
 )
 
@@ -19,7 +19,7 @@ func SubmitOrders(ctx context.Context, c *app.RequestContext) {
 	c.JSON(http.StatusOK, common.Result{1, "", nil})
 }
 func PageOrders(ctx context.Context, c *app.RequestContext) {
-	var page dto.OrderPageQueryDTO
+	var page dto.OrdersPageQueryDTO
 	c.Bind(&page)
 	page.UserId = middleware.GetJwtPayload(c)
 	service.PageQuery4UserOrder(&page)

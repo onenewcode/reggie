@@ -30,8 +30,9 @@ func SubmitOrder(order *model.Order) (*vo2.OrderSubmitVO, error) {
 
 	//2. 向订单表插入1条数据
 	order.OrderTime = time.Now()
-	order.PayStatus = model.UN_PAID
-	order.Status = model.PENDING_PAYMENT
+	// todo
+	//order.PayStatus = model.UN_PAID
+	//order.Status = model.PENDING_PAYMENT
 	order.Number = strconv.FormatInt(time.Now().UnixNano(), 10)
 	order.Address = addressBook.Detail
 	order.Phone = addressBook.Consignee
