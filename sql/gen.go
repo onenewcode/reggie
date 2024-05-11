@@ -20,7 +20,7 @@ func main() {
 		FieldWithTypeTag: true, // generate with gorm column type tag
 	})
 	//  建立数据库连接
-	gormdb, _ := gorm.Open(mysql.Open("root:root@(121.37.143.160:3306)/dish?charset=utf8mb4&parseTime=True&loc=Local"))
+	gormdb, _ := gorm.Open(mysql.Open("root:root@tcp(121.37.143.160:3306)/sky_take_out?charset=utf8&parseTime=True&loc=Local"))
 	g.UseDB(gormdb) // 选择数据库连接
 	g.ApplyBasic(
 		// 从当前数据库的所有表生成结构
