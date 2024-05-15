@@ -11,7 +11,7 @@ func main() {
 	g := gen.NewGenerator(gen.Config{
 		//  设置输出路径
 		OutPath: "./dal/query",
-		Mode:    gen.WithDefaultQuery,
+		Mode:    gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface,
 		// 模型结构体字段的数字类型的符号表示是否与表字段的一致, `false`指示都用有符号类型
 		FieldSignable: false, // detect integer field's unsigned type, adjust generated data type
 		// 生成 gorm 标签的字段索引属性

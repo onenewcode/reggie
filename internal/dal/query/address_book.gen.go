@@ -380,3 +380,31 @@ func (a *addressBookDo) withDO(do gen.Dao) *addressBookDo {
 	a.DO = *do.(*gen.DO)
 	return a
 }
+
+func (a *addressBookDo) List(address *model.AddressBook) (*[]model.AddressBook, error) {
+	var list []model.AddressBook
+
+	origin_sql := a.DO.UnderlyingDB()
+	if address.UserID != 0 {
+		origin_sql = origin_sql.Where("user_id =? ", address.UserID)
+	}
+	if address.Phone != "" {
+		origin_sql = origin_sql.Where("phone=?", address.Phone)
+	}
+	origin_sql.Find(&list)
+	return &list, nil
+}
+
+func (a *addressBookDo) GetById(id int64) *model.AddressBook {
+	var address model.AddressBook
+	a.DO.UnderlyingDB().Where("id=?", id).First(&address)
+	return &address
+}
+
+func (a *addressBookDo) UpdateIsDefaultByUserId(address *model.AddressBook) {
+	a.Where()
+	a.DO.UnderlyingDB().Model(&address).Where("user_id =?", address.UserID).Update("is_default", address.IsDefault)
+}
+func (a *addressBookDo) DeleteById(id int64) {
+	a.DO.UnderlyingDB().Delete(&model.AddressBook{}, id)
+}
