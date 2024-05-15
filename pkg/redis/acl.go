@@ -4,11 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"github.com/redis/go-redis/v9"
 	"reggie/internal/dal/vo"
+	"strconv"
+	"time"
 )
 
 const (
-	dish_vo = "dishVo:"
+	dish_vo         = "dishVo:"
+	windowSize      = 3 * time.Second // 滑动窗口大小
+	maxRequests     = 10              // 最大请求数
+	windowKeyPrefix = "sliding_window:"
 )
 
 type RedisClient interface {
@@ -17,6 +23,7 @@ type RedisClient interface {
 	GetListDishVO(categoryId string) (*[]vo.DishVO, error)
 	SetListDishVO(categoryId string, dvo *[]vo.DishVO) error
 	ClearCacheDishByCategoryId(categoryId string)
+	AllowRequest(rdb *redis.Client, clientId string) (bool, error)
 }
 type redisClient struct {
 }
@@ -61,4 +68,43 @@ func (*redisClient) SetListDishVO(categoryId string, dvo *[]vo.DishVO) error {
 }
 func (*redisClient) ClearCacheDishByCategoryId(categoryId string) {
 	rc.Del(context.Background(), dish_vo+categoryId)
+}
+
+// 使用滑动窗口限流
+func (*redisClient) AllowRequest(user_id string) (bool, error) {
+	ctx := context.Background()
+	// 获取当前时间
+	now := time.Now().UnixNano()
+	before := now - windowSize.Nanoseconds()
+	// 设置key
+	key := windowKeyPrefix + user_id
+
+	// 删除窗口之外的请求记录
+	rc.ZRemRangeByScore(ctx, key, strconv.FormatInt(before, 10), strconv.FormatInt(now, 10))
+
+	// 累加新请求
+	pipe := rc.Pipeline() //批量发送命令提高吞吐量
+	// 查询分数是否存在
+	exists, _ := pipe.ZScore(ctx, key, strconv.FormatInt(now, 10)).Result()
+	if exists == 0 {
+		// 添加分数
+		pipe.ZAdd(ctx, key, redis.Z{Score: float64(now), Member: now})
+	} else {
+		pipe.ZIncrBy(ctx, key, 1, strconv.FormatInt(now, 10))
+	}
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	// 检查请求是否超限
+	count, err := rc.ZCard(ctx, key).Result()
+	if err != nil {
+		return false, err
+	}
+	if count > int64(maxRequests) {
+		return false, nil // 超限，拒绝请求
+	}
+
+	return true, nil // 未超限，允许请求
 }
