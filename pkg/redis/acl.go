@@ -23,7 +23,7 @@ type RedisClient interface {
 	GetListDishVO(categoryId string) (*[]vo.DishVO, error)
 	SetListDishVO(categoryId string, dvo *[]vo.DishVO) error
 	ClearCacheDishByCategoryId(categoryId string)
-	AllowRequest(rdb *redis.Client, clientId string) (bool, error)
+	AllowRequest(clientId string) (bool, error)
 }
 type redisClient struct {
 }
