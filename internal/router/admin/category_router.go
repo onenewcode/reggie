@@ -10,6 +10,7 @@ import (
 	"reggie/internal/dal/model"
 	"reggie/internal/middleware"
 	"reggie/internal/router/service"
+	"reggie/pkg/redis"
 	"strconv"
 	"time"
 )
@@ -39,6 +40,12 @@ func SaveCategory(ctx context.Context, c *app.RequestContext) {
 // @Produce application/json
 // @router /admin/category/page [get]
 func PageCat(ctx context.Context, c *app.RequestContext) {
+	user_id := middleware.GetJwtPayload(c)
+	request, err := redis.RC.AllowRequest(strconv.FormatInt(user_id, 10))
+	if err != nil || request == false {
+		c.JSON(http.StatusBadRequest, common.Result{1, "", nil})
+		return
+	}
 	var categoryPage dto.CategoryPageQueryDTO
 	c.Bind(&categoryPage)
 	log.Println("菜品分类查询", categoryPage)
